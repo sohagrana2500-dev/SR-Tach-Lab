@@ -1,5 +1,6 @@
 
 
+
 <!DOCTYPE html>
 <html lang="bn" data-theme="dark">
 <head>
@@ -606,11 +607,10 @@ footer{text-align:center;padding:40px 22px;font-size:12.5px;color:var(--muted-di
         <div class="login-title" id="admLoginTitle">এডমিন লগইন</div>
         <div class="login-sub" id="admLoginSub">সাইট এডিট করতে লগইন করুন</div>
         <form id="adminLoginForm">
-          <div class="f-field"><label class="f-label" id="admLabelUser">ইমেইল</label><input class="f-input" id="loginUser" type="email" required placeholder="আপনার এডমিন ইমেইল"/></div>
-          <div class="f-field"><label class="f-label" id="admLabelPass">পাসওয়ার্ড</label><input class="f-input" id="loginPass" type="password" required placeholder="পাসওয়ার্ড"/></div>
+          <div class="f-field"><label class="f-label" id="admLabelPass">পাসওয়ার্ড</label><input class="f-input" id="loginPass" type="password" required placeholder="পাসওয়ার্ড" autofocus/></div>
           <button class="f-submit" type="submit" id="admLoginBtn">লগইন করুন</button>
         </form>
-        <div class="login-err" id="loginErr">ইমেইল বা পাসওয়ার্ড সঠিক নয়।</div>
+        <div class="login-err" id="loginErr">পাসওয়ার্ড সঠিক নয়।</div>
       </div>
     </div>
   </section>
@@ -698,6 +698,7 @@ const firebaseConfig = {
 };
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
+const ADMIN_EMAIL = "sohagrana.work@gmail.com"; // পাসওয়ার্ড-অনলি লগইনের জন্য ফিক্সড অ্যাডমিন ইমেইল
 const db = firebase.firestore();
 const SITE_DOC = db.collection("site").doc("main");
 
@@ -1203,7 +1204,7 @@ function openAdmin(){
 // ══════════════════════════ Admin Auth (Firebase) ══════════════════════════
 document.getElementById("adminLoginForm").addEventListener("submit", function(e){
   e.preventDefault();
-  const email = document.getElementById("loginUser").value.trim();
+  const email = ADMIN_EMAIL;
   const pass  = document.getElementById("loginPass").value;
   const errEl = document.getElementById("loginErr");
   const btn   = document.getElementById("admLoginBtn");
@@ -1220,9 +1221,10 @@ document.getElementById("adminLoginForm").addEventListener("submit", function(e)
       btn.disabled = false;
       console.error("Login failed:", err.code, err.message);
       errEl.textContent = (currentLang === "bn")
-        ? "ইমেইল বা পাসওয়ার্ড সঠিক নয়।"
-        : "Incorrect email or password.";
+        ? "পাসওয়ার্ড সঠিক নয়।"
+        : "Incorrect password.";
       errEl.style.display = "block";
+      document.getElementById("loginPass").value = "";
     });
 });
 
