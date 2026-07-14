@@ -1200,6 +1200,45 @@ function openAdmin(){
   document.getElementById("adminLoginPage").classList.add("active");
 }
 
+// ══════════════════════════ Admin Auth (Firebase) ══════════════════════════
+document.getElementById("adminLoginForm").addEventListener("submit", function(e){
+  e.preventDefault();
+  const email = document.getElementById("loginUser").value.trim();
+  const pass  = document.getElementById("loginPass").value;
+  const errEl = document.getElementById("loginErr");
+  const btn   = document.getElementById("admLoginBtn");
+
+  errEl.style.display = "none";
+  btn.disabled = true;
+
+  auth.signInWithEmailAndPassword(email, pass)
+    .then(()=>{
+      btn.disabled = false;
+      showPage("adminDashboardPage");
+    })
+    .catch((err)=>{
+      btn.disabled = false;
+      console.error("Login failed:", err.code, err.message);
+      errEl.textContent = (currentLang === "bn")
+        ? "ইমেইল বা পাসওয়ার্ড সঠিক নয়।"
+        : "Incorrect email or password.";
+      errEl.style.display = "block";
+    });
+});
+
+function adminLogout(){
+  auth.signOut().then(()=>{
+    showPage("homePage");
+  });
+}
+
+// যদি লগআউট অবস্থায় কেউ সরাসরি ড্যাশবোর্ড পেজে থাকে, তাকে লগইন পেজে ফেরত পাঠাও
+auth.onAuthStateChanged(function(user){
+  if(!user && document.getElementById("adminDashboardPage").classList.contains("active")){
+    showPage("adminLoginPage");
+  }
+});
+
 // ══════════════════════════ 3D Showcase ══════════════════════════
 const mockDash=document.getElementById("mockDash");
 const scVisual=document.getElementById("scVisual");
