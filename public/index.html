@@ -127,7 +127,8 @@ nav.tabs::-webkit-scrollbar{display:none}
 
 /* ══ STATS ══ */
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:56px;perspective:900px}
-@media(max-width:800px){.stats{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:800px){.stats{gap:8px}.stat-card{padding:14px 6px;border-radius:12px}.stat-num{font-size:20px}.stat-label{font-size:9.5px;margin-top:2px}}
+@media(max-width:420px){.stats{gap:5px}.stat-card{padding:10px 4px}.stat-num{font-size:16px}.stat-label{font-size:8px}}
 .stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:26px 16px;text-align:center;
   position:relative;overflow:hidden;transform-style:preserve-3d;transition:transform .35s cubic-bezier(.22,.9,.32,1),box-shadow .35s,border-color .35s;
   will-change:transform}
@@ -418,7 +419,6 @@ footer{text-align:center;padding:40px 22px;font-size:12.5px;color:var(--muted-di
   <section class="page active" id="homePage">
     <div class="hero">
       <div class="clock-pill"><span class="dot"></span><span id="clockText">লোড হচ্ছে...</span></div>
-      <div class="visitor-pill" id="visitorPill">👁 <span class="vp-num" id="visitorCount">···</span> <span id="visitorLabelEl">জন ভিজিট করেছেন</span></div>
       <div class="hero-desc" id="heroDescEl">
         আপনার সেবা, প্রোডাক্ট বা কাজের একটি সংক্ষিপ্ত ও আকর্ষণীয় বিবরণ এখানে বসবে।
       </div>
@@ -594,7 +594,7 @@ footer{text-align:center;padding:40px 22px;font-size:12.5px;color:var(--muted-di
           <div class="f-field"><label class="f-label" id="fieldMsg">বার্তা</label><textarea class="f-textarea" id="inputMsg" required placeholder="আপনার বার্তা লিখুন..."></textarea></div>
           <button class="f-submit" type="submit" id="contactSubmit">বার্তা পাঠান</button>
         </form>
-        <div class="f-note" id="contactNote">নোট: এই ফর্মটি এখন শুধু ডিজাইন হিসেবে কাজ করে।</div>
+        <div class="f-note" id="contactNote">বার্তা পাঠালে সরাসরি আমাদের কাছে পৌঁছে যাবে।</div>
       </div>
     </div>
   </section>
@@ -836,7 +836,7 @@ const uiTranslations = {
     videoEyebrow: "চ্যানেল", videoTitle: "ভিডিও", videoSub: "ইউটিউব বা অন্য কোনো ভিডিও এখানে এমবেড করা যাবে।", videoHint: "ভিডিও যোগ করতে এডমিন প্যানেল ব্যবহার করুন।",
     aboutEyebrow: "পরিচিতি", aboutTitle: "সম্পর্কে", aboutSub: "আমার কাজ, দক্ষতা ও যাত্রার সংক্ষিপ্ত বিবরণ।",
     contactEyebrow: "যোগাযোগ", contactTitle: "যোগাযোগ করুন", contactSub: "প্রশ্ন বা কাজের প্রস্তাবের জন্য যোগাযোগ করুন।",
-    labelEmail: "ইমেইল", labelPhone: "ফোন", labelLoc: "অবস্থান", fieldName: "নাম", fieldEmail: "ইমেইল", fieldMsg: "বার্তা", contactSubmit: "বার্তা পাঠান", contactNote: "নোট: এই ফর্মটি এখন শুধু ডিজাইন হিসেবে কাজ করে।",
+    labelEmail: "ইমেইল", labelPhone: "ফোন", labelLoc: "অবস্থান", fieldName: "নাম", fieldEmail: "ইমেইল", fieldMsg: "বার্তা", contactSubmit: "বার্তা পাঠান", contactNote: "বার্তা পাঠালে সরাসরি আমাদের কাছে পৌঁছে যাবে।",
     footerRights: "সর্বস্বত্ব সংরক্ষিত",
     toastSubSuccess: "সাবস্ক্রাইব করার জন্য ধন্যবাদ! 🎉", toastSubFail: "সাবস্ক্রাইব ব্যর্থ হয়েছে",
     admLoginTitle: "এডমিন লগইন", admLoginBtn: "লগইন করুন", admDashTitle: "এডমিন ড্যাশবোর্ড", admBtnLogout: "🚪 লগআউট",
@@ -861,7 +861,7 @@ const uiTranslations = {
     videoEyebrow: "Channel", videoTitle: "Videos", videoSub: "YouTube or other videos can be embedded here.", videoHint: "Use admin panel to add videos.",
     aboutEyebrow: "Introduction", aboutTitle: "About", aboutSub: "A brief overview of my work, skills, and journey.",
     contactEyebrow: "Contact", contactTitle: "Contact Me", contactSub: "Contact for questions, proposals, or messages.",
-    labelEmail: "Email", labelPhone: "Phone", labelLoc: "Location", fieldName: "Name", fieldEmail: "Email", fieldMsg: "Message", contactSubmit: "Send Message", contactNote: "Note: This form is currently design only.",
+    labelEmail: "Email", labelPhone: "Phone", labelLoc: "Location", fieldName: "Name", fieldEmail: "Email", fieldMsg: "Message", contactSubmit: "Send Message", contactNote: "Your message will be sent directly to us.",
     footerRights: "All Rights Reserved",
     toastSubSuccess: "Thanks for subscribing! 🎉", toastSubFail: "Subscription failed",
     admLoginTitle: "Admin Login", admLoginBtn: "Login", admDashTitle: "Admin Dashboard", admBtnLogout: "🚪 Logout",
@@ -1030,9 +1030,15 @@ function renderBrand(){
 
 function renderHomeStatic(){
   document.getElementById("heroDescEl").innerHTML = siteData.home.heroDesc;
-  document.getElementById("statsGrid").innerHTML = siteData.home.stats.map((s,i)=>{
+  const visitorLabel = currentLang === 'bn' ? 'মোট ভিজিটর' : 'Total Visitors';
+  const visitorNumHtml = lastVisitorCount ? (currentLang==='bn' ? toBn(lastVisitorCount) : String(lastVisitorCount)) : '···';
+  const visitorCardHtml = `<div class="stat-card reveal reveal-stagger" style="--rd:0" data-counted="1">
+      <div class="stat-num" id="visitorStatNum">${visitorNumHtml}</div>
+      <div class="stat-label">👁 ${visitorLabel}</div>
+    </div>`;
+  document.getElementById("statsGrid").innerHTML = visitorCardHtml + siteData.home.stats.map((s,i)=>{
     const {value,prefix,suffix} = parseStatNumber(s.num);
-    return `<div class="stat-card reveal reveal-stagger" style="--rd:${i}" data-target="${value}" data-prefix="${prefix}" data-suffix="${suffix}" data-counted="0">
+    return `<div class="stat-card reveal reveal-stagger" style="--rd:${i+1}" data-target="${value}" data-prefix="${prefix}" data-suffix="${suffix}" data-counted="0">
       <div class="stat-num">${prefix}${currentLang==='bn'?'০':'0'}${suffix}</div>
       <div class="stat-label">${s.label}</div>
     </div>`;
@@ -1266,6 +1272,26 @@ function showToast(msg){
   setTimeout(()=>t.classList.remove("show"),2200);
 }
 
+// ══════════════════════════ FAQ ফ্লোটিং বাটন ══════════════════════════
+const fabBtn = document.getElementById("fabBtn");
+const faqPanel = document.getElementById("faqPanel");
+fabBtn.addEventListener("click", ()=>{
+  faqPanel.classList.toggle("open");
+  if(faqPanel.classList.contains("open")) renderFAQ();
+});
+document.getElementById("faqPanelClose").addEventListener("click", ()=>{
+  faqPanel.classList.remove("open");
+});
+
+// ══════════════════════════ উপরে যাওয়ার বাটন ══════════════════════════
+const backTopBtn = document.getElementById("backTopBtn");
+window.addEventListener("scroll", ()=>{
+  backTopBtn.classList.toggle("show", window.scrollY > 400);
+});
+backTopBtn.addEventListener("click", ()=>{
+  window.scrollTo({top:0, behavior:"smooth"});
+});
+
 // ══════════════════════════ Clock ══════════════════════════
 const banglaDigits=["০","১","২","৩","৪","৫","৬","৭","৮","৯"];
 const banglaMonths=["জানুয়ারি","ফেব্রুয়ারি","মার্চ","এপ্রিল","মে","জুন","জুলাই","আগস্ট","সেপ্টেম্বর","অক্টোবর","নভেম্বর","ডিসেম্বর"];
@@ -1308,7 +1334,7 @@ async function init(){
 let lastVisitorCount = 0;
 function setVisitorDisplay(n){
   const disp = currentLang==='bn' ? toBn(n) : String(n);
-  const heroEl = document.getElementById("visitorCount");
+  const heroEl = document.getElementById("visitorStatNum");
   const footEl = document.getElementById("footerVisitorCount");
   if(heroEl) heroEl.textContent = disp;
   if(footEl) footEl.textContent = disp;
