@@ -1,28 +1,441 @@
-<!DOCTYPE html>
-<html lang="en" class="h-full">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SR Tech Lab - Clean Minimalism</title>
-  <!-- Tailwind CSS v4 CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts: Space Grotesk, Hind Siliguri, JetBrains Mono -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
-  <!-- Font Awesome for Icons -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
+@import "tailwindcss";
 
-  <style>
-    :root {
-      --font-sans: 'Hind Siliguri', 'Space Grotesk', sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
-      --brand-glow: rgba(0, 242, 255, 0.3);
-      --accent-color: #00f2ff;
+@theme {
+  --font-sans: "Hind Siliguri", system-ui, -apple-system, sans-serif;
+  --font-display: "Space Grotesk", "Hind Siliguri", sans-serif;
+  
+  --color-brand-purple: #00f2ff;
+  --color-brand-purple-light: #80f9ff;
+  --color-brand-blue: #00c8ff;
+  --color-brand-teal: #00f2ff;
+  --color-brand-dark-bg: #050505;
+  --color-brand-card: rgba(255, 255, 255, 0.03);
+  --color-brand-card-solid: #0e0e0e;
+}
+
+@layer utilities {
+  .glass {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .glass-dark {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .accent-glow {
+    box-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
+  }
+
+  .glow-text {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+
+  .corner-border {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-color: rgba(255, 255, 255, 0.2);
+    border-style: solid;
+    pointer-events: none;
+  }
+  
+  .top-l { top: 0; left: 0; border-width: 1px 0 0 1px; }
+  .top-r { top: 0; right: 0; border-width: 1px 1px 0 0; }
+  .bot-l { bottom: 0; left: 0; border-width: 0 0 1px 1px; }
+  .bot-r { bottom: 0; right: 0; border-width: 0 1px 1px 0; }
+
+  .btn-hover {
+    transition: all 0.3s ease;
+  }
+
+  .btn-hover:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-1px);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+  
+  .glass-card-solid {
+    background: #0e0e0e;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+  
+  .glass-card-hover:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(0, 242, 255, 0.4);
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 242, 255, 0.15);
+    transform: translateY(-4px);
+  }
+
+  .glass-modal {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  background-color: #050505;
+}
+
+body {
+  background-color: #050505;
+  color: #f1f5f9;
+  font-family: var(--font-sans);
+}
+
+/* Custom modern scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 242, 255, 0.2);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 242, 255, 0.4);
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 15px rgba(0, 242, 255, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(0, 242, 255, 0.5);
+  }
+}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SR Tech Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%2300f2ff'/%3E%3Ctext x='50' y='66' font-size='46' font-family='sans-serif' font-weight='700' fill='black' text-anchor='middle'%3ESR%3C/text%3E%3C/svg%3E"/>
+  </head>
+  <body class="bg-[#050505] text-slate-200 selection:bg-[#00f2ff]/30 selection:text-white antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+.animate-pulse-glow {
+import React, { useEffect, useState, useRef } from "react";
+
+interface StatCardProps {
+  num: string; // e.g. "60+" or "98%"
+  label: string;
+  lang: "bn" | "en";
+  key?: any;
+}
+
+const banglaDigits = ["০", "১", "২", "৩", "৪", "৫", "৬", "৭", "৮", "৯"];
+
+function toBanglaNum(numStr: string): string {
+  return numStr
+    .split("")
+    .map((char) => {
+      const idx = parseInt(char, 10);
+      return !isNaN(idx) ? banglaDigits[idx] : char;
+    })
+    .join("");
+}
+
+const StatCard: React.FC<StatCardProps> = ({ num, label, lang }) => {
+  const [displayCount, setDisplayCount] = useState<string>("0");
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  // Extract raw number and any suffix (e.g. "+", "%")
+  const numericPart = num.replace(/[^0-9]/g, "");
+  const suffix = num.replace(/[0-9]/g, "");
+  const prefix = num.startsWith("$") ? "$" : "";
+
+  useEffect(() => {
+    const target = parseInt(numericPart, 10);
+    if (isNaN(target)) {
+      setDisplayCount(lang === "bn" ? toBanglaNum(num) : num);
+      return;
     }
 
-    body {
-      font-family: var(--font-sans);
-      background-color: #050505;
-      color: #e2e8f0;
-      overflow-x: hidden;
+    let start = 0;
+    const duration = 1200; // ms
+    const stepTime = Math.max(Math.floor(duration / target), 15);
+    
+    const timer = setInterval(() => {
+      start += Math.ceil(target / 40);
+      if (start >= target) {
+        clearInterval(timer);
+        setDisplayCount(lang === "bn" ? toBanglaNum(String(target)) : String(target));
+      } else {
+        setDisplayCount(lang === "bn" ? toBanglaNum(String(start)) : String(start));
+      }
+    }, stepTime);
+
+    return () => clearInterval(timer);
+  }, [num, numericPart, lang]);
+
+  // Cyber mouse tilt hover effect
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = cardRef.current;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left - rect.width / 2;
+    const y = e.clientY - rect.top - rect.height / 2;
+    card.style.transform = `perspective(1000px) rotateX(${-y * 0.1}deg) rotateY(${x * 0.1}deg) translateY(-4px)`;
+  };
+
+  const handleMouseLeave = () => {
+    const card = cardRef.current;
+    if (!card) return;
+    card.style.transform = "perspective(1000px) rotateX(0deg) rotateY(0deg) translateY(0px)";
+  };
+
+  return (
+    <div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      className="glass p-6 rounded-xl text-center relative overflow-hidden transition-all duration-300 select-none cursor-pointer border border-white/5 shadow-md flex flex-col justify-center min-h-[120px] sm:min-h-[150px]"
+      id={`stat-card-${label}`}
+    >
+      {/* Corner borders for clean minimal styling */}
+      <div className="corner-border top-l" />
+      <div className="corner-border top-r" />
+      <div className="corner-border bot-l" />
+      <div className="corner-border bot-r" />
+
+      {/* Background soft glowing orb */}
+      <div className="absolute inset-0 bg-radial from-[#00f2ff]/5 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+
+      {/* Shimmer sweep line */}
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+
+      <div className="font-display font-extrabold text-2xl sm:text-4xl text-[#00f2ff] tracking-tight transition-transform duration-300 drop-shadow-[0_0_10px_rgba(0,242,255,0.2)]">
+        {prefix}
+        {displayCount}
+        {suffix}
+      </div>
+      <div className="text-[10px] sm:text-[11px] uppercase tracking-widest text-gray-400 mt-2 font-semibold">
+        {label}
+      </div>
+    </div>
+  );
+};
+
+export default StatCard;
+        import React, { useState } from "react";
+import { 
+  Menu, X, Sparkles, Settings2, Globe, Laptop 
+} from "lucide-react";
+import { SiteData, Language } from "../types";
+
+interface HeaderProps {
+  siteData: SiteData;
+  lang: Language;
+  onLangChange: (lang: Language) => void;
+  activePage: string;
+  onPageChange: (page: string) => void;
+  onOpenAdmin: () => void;
+}
+
+const Header: React.FC<HeaderProps> = ({
+  siteData,
+  lang,
+  onLangChange,
+  activePage,
+  onPageChange,
+  onOpenAdmin,
+}) => {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
+
+  const { brand, navigation } = siteData;
+
+  const handlePageSelect = (pageId: string) => {
+    onPageChange(pageId);
+    setMobileMenuOpen(false);
+  };
+
+  // If branding fallback is needed
+  const isDefaultBrand = brand.name === "SR Tech Lab" || brand.name === "এস আর টেক ল্যাব";
+  const displayName = (lang === "en" && isDefaultBrand) ? "SR Tech Lab" : brand.name;
+
+  return (
+    <header className="sticky top-0 z-50 bg-[#050505]/80 backdrop-blur-md border-b border-white/5" id="main-header">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 gap-4">
+          
+          {/* Logo Area */}
+          <div 
+            onClick={() => handlePageSelect("homePage")}
+            className="flex items-center gap-2.5 flex-shrink-0 cursor-pointer group"
+          >
+            <div className="w-9 h-9 rounded-lg bg-brand-purple accent-glow flex items-center justify-center font-display font-bold text-black text-xs shadow-md shadow-brand-purple/10 group-hover:scale-[1.05] transition-all relative overflow-hidden">
+              {brand.logoImage ? (
+                <img src={brand.logoImage} alt="logo" className="w-full h-full object-cover" />
+              ) : (
+                <span>SR</span>
+              )}
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </div>
+            <div className="flex flex-col">
+              <span className="font-display font-bold text-[14px] sm:text-[15.5px] text-white tracking-widest leading-tight group-hover:text-brand-purple transition-all uppercase">
+                {displayName}
+              </span>
+              <span className="text-[8px] font-display text-gray-400 tracking-[0.2em] flex items-center gap-1 uppercase">
+                <Sparkles className="w-2 h-2 text-brand-purple animate-pulse" />
+                <span>Tech Studio</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center gap-1 flex-1 justify-center">
+            {navigation.map((item) => {
+              const active = activePage === item.id || (item.id === "blogPage" && activePage === "blogDetailPage");
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handlePageSelect(item.id)}
+                  className={`px-3.5 py-1.5 rounded-full text-[11px] uppercase tracking-widest font-medium transition-all duration-200 cursor-pointer relative overflow-hidden ${
+                    active 
+                      ? "text-[#00f2ff] bg-[#00f2ff]/10 font-bold" 
+                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  <span>{lang === "bn" ? item.titleBn : item.titleEn}</span>
+                  {active && (
+                    <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-[#00f2ff] rounded-full" />
+                  )}
+                </button>
+              );
+            })}
+          </nav>
+
+          {/* Settings Menu Drawer with Telemetry */}
+          <div className="flex items-center gap-2.5 flex-shrink-0 relative">
+            <div className="hidden md:flex flex-col items-end text-[9px] uppercase tracking-widest pr-3 border-r border-white/10 mr-1 leading-tight select-none">
+              <span className="text-[#00f2ff]">Status: Online</span>
+              <span className="opacity-40 mt-0.5">Ping: 24ms</span>
+            </div>
+
+            <button
+              onClick={() => setShowOptions(!showOptions)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 text-white text-[10px] uppercase tracking-widest font-bold cursor-pointer transition-all active:scale-95"
+            >
+              <Settings2 className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">{lang === "bn" ? "অপশন" : "Options"} ▾</span>
+            </button>
+
+            {showOptions && (
+              <>
+                <div 
+                  className="fixed inset-0 z-10" 
+                  onClick={() => setShowOptions(false)} 
+                />
+                <div className="absolute right-0 top-full mt-2 w-48 rounded-xl bg-black/95 border border-white/10 p-1.5 shadow-2xl z-20 animate-fadeIn">
+                  <button
+                    onClick={() => {
+                      onLangChange(lang === "bn" ? "en" : "bn");
+                      setShowOptions(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-300 hover:text-white hover:bg-[#00f2ff]/10 rounded-lg transition-all cursor-pointer text-left font-display font-medium"
+                  >
+                    <Globe className="w-3.5 h-3.5 text-brand-teal" />
+                    <span>{lang === "bn" ? "English (EN)" : "বাংলা (BN)"}</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      onOpenAdmin();
+                      setShowOptions(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-gray-300 hover:text-white hover:bg-[#00f2ff]/10 rounded-lg transition-all cursor-pointer text-left font-display font-medium"
+                  >
+                    🔐 <span>{lang === "bn" ? "এডমিন প্যানেল" : "Admin Panel"}</span>
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* Mobile Hamburger Menu Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white cursor-pointer transition-all active:scale-95"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Mobile Navigation Drawer */}
+      {mobileMenuOpen && (
+        <div className="lg:hidden bg-black/95 border-b border-white/10 py-3 px-4 animate-fadeIn">
+          <nav className="flex flex-col gap-1">
+            {navigation.map((item) => {
+              const active = activePage === item.id || (item.id === "blogPage" && activePage === "blogDetailPage");
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => handlePageSelect(item.id)}
+                  className={`w-full text-left px-4 py-2.5 rounded-lg text-xs uppercase tracking-widest font-medium transition-all cursor-pointer ${
+                    active 
+                      ? "text-[#00f2ff] bg-[#00f2ff]/10 font-bold" 
+                      : "text-gray-400 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {lang === "bn" ? item.titleBn : item.titleEn}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+      )}
+    </header>
+  );
+};
+
+export default Header;
+               // 3D গ্লোবের কোর স্পেসকে Clean Minimalism থিমের সাথে মানানসই করতে ডার্কনেস এবং ব্যাকগ্রাউন্ড কালার সামঞ্জস্য করা হয়েছে:
+    const coreGeometry = new THREE.SphereGeometry(3.9, 32, 32);
+    const coreMaterial = new THREE.MeshBasicMaterial({
+      color: 0x050505, // deep dark matching base clean black
+      transparent: true,
+      opacity: 0.85,
+    }); 
+  animation: pulse-glow 3s infinite;
+}
