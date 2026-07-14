@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="bn" data-theme="dark">
 <head>
@@ -109,6 +110,10 @@ nav.tabs::-webkit-scrollbar{display:none}
 .clock-pill .dot{width:7px;height:7px;border-radius:50%;background:var(--purple);box-shadow:0 0 0 0 rgba(124,111,240,.6);animation:pulse 1.8s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(124,111,240,.55)}70%{box-shadow:0 0 0 7px rgba(124,111,240,0)}100%{box-shadow:0 0 0 0 rgba(124,111,240,0)}}
 .hero-desc{max-width:720px;margin:0 auto 30px;font-size:15px;line-height:1.85;color:var(--muted)}
+.visitor-pill{display:inline-flex;align-items:center;gap:8px;padding:7px 16px;border-radius:30px;background:var(--card);
+  border:1px solid var(--border);font-size:12px;color:var(--muted);margin:0 0 22px;margin-top:-14px}
+.visitor-pill .vp-num{font-family:'Space Grotesk',sans-serif;font-weight:700;color:var(--purple)}
+.footer-visitors{font-size:11px;color:var(--muted-dim);margin-top:4px}
 .placeholder-tag{font-family:'Space Grotesk',sans-serif;font-size:9.5px;background:var(--card);color:var(--purple);
   padding:2px 7px;border-radius:5px;border:1px dashed var(--purple);margin-left:6px;white-space:nowrap;vertical-align:middle}
 .hero-cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:44px}
@@ -120,11 +125,18 @@ nav.tabs::-webkit-scrollbar{display:none}
 .btn-outline:hover{border-color:var(--purple)}
 
 /* ══ STATS ══ */
-.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:56px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:56px;perspective:900px}
 @media(max-width:800px){.stats{grid-template-columns:repeat(2,1fr)}}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:24px 16px;text-align:center}
-.stat-num{font-family:'Space Grotesk',sans-serif;font-size:32px;font-weight:700;color:var(--purple);letter-spacing:-.5px}
-.stat-label{font-size:12px;color:var(--muted);margin-top:4px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:26px 16px;text-align:center;
+  position:relative;overflow:hidden;transform-style:preserve-3d;transition:transform .35s cubic-bezier(.22,.9,.32,1),box-shadow .35s,border-color .35s;
+  will-change:transform}
+.stat-card::before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.08) 48%,transparent 66%);
+  transform:translateX(-120%);transition:transform .7s ease}
+.stat-card:hover{border-color:var(--purple);box-shadow:0 18px 34px rgba(0,0,0,.28),0 0 0 1px var(--purple-soft)}
+.stat-card:hover::before{transform:translateX(120%)}
+.stat-num{font-family:'Space Grotesk',sans-serif;font-size:34px;font-weight:700;color:var(--purple);letter-spacing:-.5px;
+  transform:translateZ(26px);display:block;text-shadow:0 1px 0 rgba(255,255,255,.12),0 2px 10px rgba(0,0,0,.25)}
+.stat-label{font-size:12px;color:var(--muted);margin-top:4px;transform:translateZ(14px)}
 
 /* ══ SHOWCASE (3D interactive) ══ */
 .showcase{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:40px;display:grid;
@@ -405,6 +417,7 @@ footer{text-align:center;padding:40px 22px;font-size:12.5px;color:var(--muted-di
   <section class="page active" id="homePage">
     <div class="hero">
       <div class="clock-pill"><span class="dot"></span><span id="clockText">লোড হচ্ছে...</span></div>
+      <div class="visitor-pill" id="visitorPill">👁 <span class="vp-num" id="visitorCount">···</span> <span id="visitorLabelEl">জন ভিজিট করেছেন</span></div>
       <div class="hero-desc" id="heroDescEl">
         আপনার সেবা, প্রোডাক্ট বা কাজের একটি সংক্ষিপ্ত ও আকর্ষণীয় বিবরণ এখানে বসবে।
       </div>
@@ -648,7 +661,9 @@ footer{text-align:center;padding:40px 22px;font-size:12.5px;color:var(--muted-di
 
 </div>
 
-<footer>© <span id="yearNow"></span> <span id="footerBrand">এস আর টেক ল্যাব</span> — <span id="footerRights">সর্বস্বত্ব সংরক্ষিত</span></footer>
+<footer>© <span id="yearNow"></span> <span id="footerBrand">এস আর টেক ল্যাব</span> — <span id="footerRights">সর্বস্বত্ব সংরক্ষিত</span>
+  <div class="footer-visitors">👁 <span id="footerVisitorCount">···</span> <span id="footerVisitorLabelEl">মোট ভিজিট</span></div>
+</footer>
 
 <button class="fab" id="fabBtn" title="সচরাচর জিজ্ঞাসিত প্রশ্ন">💬</button>
 <div class="faq-panel" id="faqPanel">
@@ -709,6 +724,7 @@ const uiTranslations = {
     toastSubSuccess: "সাবস্ক্রাইব করার জন্য ধন্যবাদ! 🎉", toastSubFail: "সাবস্ক্রাইব ব্যর্থ হয়েছে",
     admLoginTitle: "এডমিন লগইন", admLoginBtn: "লগইন করুন", admDashTitle: "এডমিন ড্যাশবোর্ড", admBtnLogout: "🚪 লগআউট",
     faqPanelTitle: "সচরাচর জিজ্ঞাসিত প্রশ্ন", faqPanelSub: "যেকোনো প্রশ্নে ক্লিক করে উত্তর দেখুন",
+    visitorLabelEl: "জন ভিজিট করেছেন", footerVisitorLabelEl: "মোট ভিজিট",
     clockLoading: "লোড হচ্ছে...",
     ampmAm: "পূর্বাহ্ণ", ampmPm: "অপরাহ্ণ"
   },
@@ -733,6 +749,7 @@ const uiTranslations = {
     toastSubSuccess: "Thanks for subscribing! 🎉", toastSubFail: "Subscription failed",
     admLoginTitle: "Admin Login", admLoginBtn: "Login", admDashTitle: "Admin Dashboard", admBtnLogout: "🚪 Logout",
     faqPanelTitle: "Frequently Asked Questions", faqPanelSub: "Click any question to see the answer",
+    visitorLabelEl: "visitors", footerVisitorLabelEl: "total visits",
     clockLoading: "Loading...",
     ampmAm: "AM", ampmPm: "PM"
   }
@@ -760,8 +777,10 @@ function renderBilingualUI() {
       }
     }
   }
-  document.getElementById("footerBrand").textContent = siteData ? siteData.brand.name : t.brandName;
-  document.getElementById("brandNameEl").textContent = siteData ? siteData.brand.name : t.brandName;
+  const isDefaultBrand = !siteData || siteData.brand.name === DEFAULT_DATA.brand.name;
+  const brandDisplay = (currentLang === 'en' && isDefaultBrand) ? t.brandName : (siteData ? siteData.brand.name : t.brandName);
+  document.getElementById("footerBrand").textContent = brandDisplay;
+  document.getElementById("brandNameEl").textContent = brandDisplay;
 }
 
 // ══════════════════════════ Default Data ══════════════════════════
@@ -828,21 +847,82 @@ function thumbHtml(image,title,c1,c2){
     : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,${c1},${c2})">${code(title)}</div>`;
 }
 
+// ══ স্ট্যাটস: সংখ্যা পার্স ও কাউন্ট-আপ ══
+const bnDigitMap = {'০':'0','১':'1','২':'2','৩':'3','৪':'4','৫':'5','৬':'6','৭':'7','৮':'8','৯':'9'};
+function parseStatNumber(str){
+  str = String(str||"");
+  let prefix="", numStr="", suffix="", seenDigit=false;
+  for(const ch of str){
+    const isDigit = /[0-9০-৯]/.test(ch);
+    if(isDigit){ seenDigit=true; numStr += ch; }
+    else if(!seenDigit){ prefix += ch; }
+    else{ suffix += ch; }
+  }
+  const normalized = numStr.split("").map(d=>bnDigitMap[d]!==undefined?bnDigitMap[d]:d).join("");
+  return { value: parseInt(normalized,10)||0, prefix, suffix };
+}
+function easeOutExpo(t){ return t>=1 ? 1 : 1-Math.pow(2,-10*t); }
+function animateStatCard(card){
+  if(card.dataset.counted==="1") return;
+  card.dataset.counted="1";
+  const target = parseInt(card.dataset.target,10)||0;
+  const prefix = card.dataset.prefix||"", suffix = card.dataset.suffix||"";
+  const numEl = card.querySelector(".stat-num");
+  const duration = 1400, start = performance.now();
+  function tick(now){
+    const p = Math.min(1,(now-start)/duration);
+    const cur = Math.round(target*easeOutExpo(p));
+    numEl.textContent = prefix + (currentLang==='bn'?toBn(cur):String(cur)) + suffix;
+    if(p<1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+let statObserver;
+function initStatCountUp(){
+  if(!statObserver){
+    statObserver = new IntersectionObserver((entries)=>{
+      entries.forEach(e=>{ if(e.isIntersecting) animateStatCard(e.target); });
+    },{threshold:0.35});
+  }
+  document.querySelectorAll("#statsGrid .stat-card").forEach(card=>{
+    if(card.dataset.counted!=="1") statObserver.observe(card);
+  });
+}
+function initStatTilt(){
+  document.querySelectorAll("#statsGrid .stat-card").forEach(card=>{
+    card.addEventListener("mousemove",(e)=>{
+      const r = card.getBoundingClientRect();
+      const x = (e.clientX-r.left)/r.width-0.5, y=(e.clientY-r.top)/r.height-0.5;
+      card.style.transform = `perspective(700px) rotateX(${(-y*10).toFixed(2)}deg) rotateY(${(x*10).toFixed(2)}deg) translateY(-4px) translateZ(6px)`;
+    });
+    card.addEventListener("mouseleave",()=>{ card.style.transform=""; });
+  });
+}
+
 function renderBrand(){
-  document.getElementById("brandNameEl").textContent = siteData.brand.name;
-  document.getElementById("footerBrand").textContent = siteData.brand.name;
+  const isDefaultBrand = siteData.brand.name === DEFAULT_DATA.brand.name;
+  const displayName = (currentLang === 'en' && isDefaultBrand) ? uiTranslations.en.brandName : siteData.brand.name;
+  document.getElementById("brandNameEl").textContent = displayName;
+  document.getElementById("footerBrand").textContent = displayName;
   const logoEl = document.getElementById("logoMarkEl");
   logoEl.innerHTML = siteData.brand.logoImage
     ? `<img src="${siteData.brand.logoImage}" alt="logo" style="width:100%;height:100%;object-fit:cover;border-radius:9px"/>`
     : (siteData.brand.logoText||"SR");
-  document.title = siteData.brand.name;
+  document.title = displayName;
 }
 
 function renderHomeStatic(){
   document.getElementById("heroDescEl").innerHTML = siteData.home.heroDesc;
-  document.getElementById("statsGrid").innerHTML = siteData.home.stats.map((s,i)=>`
-    <div class="stat-card reveal reveal-stagger" style="--rd:${i}"><div class="stat-num">${s.num}</div><div class="stat-label">${s.label}</div></div>`).join("");
+  document.getElementById("statsGrid").innerHTML = siteData.home.stats.map((s,i)=>{
+    const {value,prefix,suffix} = parseStatNumber(s.num);
+    return `<div class="stat-card reveal reveal-stagger" style="--rd:${i}" data-target="${value}" data-prefix="${prefix}" data-suffix="${suffix}" data-counted="0">
+      <div class="stat-num">${prefix}${currentLang==='bn'?'০':'0'}${suffix}</div>
+      <div class="stat-label">${s.label}</div>
+    </div>`;
+  }).join("");
   initScrollReveal();
+  initStatTilt();
+  initStatCountUp();
   document.getElementById("scEyebrowEl").textContent = siteData.home.scEyebrow;
   document.getElementById("scTitleEl").textContent = siteData.home.scTitle;
   document.getElementById("scDescEl").textContent = siteData.home.scDesc;
@@ -1059,12 +1139,45 @@ async function init(){
   renderBilingualUI();
   renderAllPublic();
   updateClock();
+  trackVisitor();
+}
+
+// ══ ভিজিটর কাউন্টার (abacus.jasoncameron.dev — বিনামূল্যে, সাইনআপ ছাড়া কাউন্টিং API) ══
+let lastVisitorCount = 0;
+function setVisitorDisplay(n){
+  const disp = currentLang==='bn' ? toBn(n) : String(n);
+  const heroEl = document.getElementById("visitorCount");
+  const footEl = document.getElementById("footerVisitorCount");
+  if(heroEl) heroEl.textContent = disp;
+  if(footEl) footEl.textContent = disp;
+}
+async function trackVisitor(){
+  try{
+    const ns = "srtechlab-" + (location.hostname || "local").replace(/[^a-z0-9]/gi,"-");
+    const key = "visits";
+    const alreadyCounted = sessionStorage.getItem("srtl_visit_counted");
+    const url = alreadyCounted
+      ? `https://abacus.jasoncameron.dev/get/${ns}/${key}`
+      : `https://abacus.jasoncameron.dev/hit/${ns}/${key}`;
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("counter fetch failed");
+    const data = await res.json();
+    if(!alreadyCounted) sessionStorage.setItem("srtl_visit_counted","1");
+    lastVisitorCount = data.value || 0;
+    setVisitorDisplay(lastVisitorCount);
+  }catch(e){
+    const heroEl = document.getElementById("visitorCount");
+    const footEl = document.getElementById("footerVisitorCount");
+    if(heroEl) heroEl.textContent = "—";
+    if(footEl) footEl.textContent = "—";
+  }
 }
 
 function renderAllPublic(){
   renderBrand(); renderHomeStatic(); renderAboutStatic(); renderContactStatic();
   renderBlog(); renderPortfolio(); renderStore(); renderVideos(); renderTimeline();
   renderFAQ();
+  if(lastVisitorCount) setVisitorDisplay(lastVisitorCount);
   setTimeout(()=>{
     document.getElementById("blogSkeleton").style.display="none"; document.getElementById("blogGrid").style.display="";
     document.getElementById("portfolioSkeleton").style.display="none"; document.getElementById("portfolioGrid").style.display="";
