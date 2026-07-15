@@ -251,6 +251,41 @@ main.main-workspace {
   border-color: var(--accent); background: var(--accent-glow);
 }
 
+/* ══ Clock: text drifts left↔right continuously instead of jumping when language changes ══ */
+#clockBtn { overflow: hidden; max-width: 260px; }
+.clock-marquee { display: inline-block; overflow: hidden; }
+.clock-marquee #topClock {
+  display: inline-block;
+  animation: clockDrift 6s ease-in-out infinite alternate;
+  white-space: nowrap;
+}
+@keyframes clockDrift {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-16px); }
+}
+@media (max-width: 640px) {
+  #clockBtn { max-width: 170px; }
+}
+
+/* ══ 3-dot corner menu (language / theme / login) ══ */
+.corner-menu-wrap { position: relative; }
+.corner-menu-dropdown {
+  display: none;
+  position: absolute; top: calc(100% + 8px); right: 0;
+  min-width: 190px; z-index: 300;
+  background: var(--bg-solid); border: 1px solid var(--border); border-radius: var(--radius-md);
+  box-shadow: var(--shadow);
+  padding: 6px; flex-direction: column; gap: 3px;
+}
+.corner-menu-dropdown.open { display: flex; animation: slideIn 0.15s ease; }
+.corner-menu-item {
+  width: 100%; text-align: left; background: none; border: none;
+  padding: 9px 12px; border-radius: 8px; font-size: 13px; font-weight: 500;
+  color: var(--text); cursor: pointer; transition: background 0.15s;
+  font-family: var(--font-sans); display: flex; align-items: center; gap: 8px;
+}
+.corner-menu-item:hover { background: var(--bg-card-hover); color: var(--accent); }
+
 .content-wrapper {
   flex: 1;
   padding: 32px;
@@ -624,6 +659,45 @@ html { scroll-behavior: smooth; }
   padding: 10px 14px; color: var(--text); font-family: inherit; font-size: 13.5px;
 }
 .form-textarea { min-height: 100px; resize: vertical; }
+
+/* ══ Blog rich-text editor (admin) ══ */
+.editor-toolbar {
+  display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px;
+  background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-md) var(--radius-md) 0 0;
+  padding: 6px; border-bottom: none;
+}
+.editor-toolbar button {
+  background: var(--bg-solid); border: 1px solid var(--border); border-radius: 6px;
+  padding: 5px 10px; font-size: 12px; color: var(--text); cursor: pointer; font-family: var(--font-sans);
+  transition: all 0.15s;
+}
+.editor-toolbar button:hover { background: var(--accent-glow); color: var(--accent); border-color: var(--border-hover); }
+.rich-editor {
+  width: 100%; min-height: 180px; max-height: 420px; overflow-y: auto;
+  background: var(--bg-solid); border: 1px solid var(--border); border-radius: 0 0 var(--radius-md) var(--radius-md);
+  padding: 12px 14px; color: var(--text);
+  font-family: var(--font-sans) !important; font-size: 14px !important; line-height: 1.8 !important;
+}
+.rich-editor:focus { outline: none; border-color: var(--border-hover); }
+.rich-editor * { font-family: var(--font-sans) !important; font-size: 14px !important; line-height: 1.8 !important; }
+.rich-editor b, .rich-editor strong { font-weight: 700 !important; }
+.rich-editor i, .rich-editor em { font-style: italic !important; }
+.rich-editor img { max-width: 100%; border-radius: 8px; margin: 10px 0; display: block; }
+.rich-editor p, .rich-editor div { margin-bottom: 10px; }
+.rich-editor:empty::before { content: attr(data-placeholder); color: var(--muted-dim); }
+
+/* ══ Blog post display (front-end) — forces one consistent font/size no matter what got saved ══ */
+.blog-content, .blog-content * {
+  font-family: var(--font-sans) !important;
+  font-size: 14px !important;
+  line-height: 1.8 !important;
+}
+.blog-content b, .blog-content strong { font-weight: 700 !important; }
+.blog-content i, .blog-content em { font-style: italic !important; }
+.blog-content img { max-width: 100%; border-radius: 10px; margin: 14px 0; display: block; }
+.blog-content p, .blog-content div { margin-bottom: 12px; }
+.blog-content ul, .blog-content ol { margin: 0 0 12px 20px; }
+
 .form-file {
   width: 100%; background: var(--bg-solid); border: 1px dashed var(--border-hover); border-radius: var(--radius-md);
   padding: 10px 14px; color: var(--muted); font-family: inherit; font-size: 12.5px; cursor: pointer;
@@ -698,12 +772,17 @@ html { scroll-behavior: smooth; }
       <button class="menu-trigger" id="menuTrigger">☰</button>
       <div class="workspace-actions">
         <button class="action-btn" id="clockBtn">
-          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: var(--accent);"></span>
-          <span id="topClock">লোড হচ্ছে...</span>
+          <span style="width: 6px; height: 6px; border-radius: 50%; background-color: var(--accent); flex-shrink: 0;"></span>
+          <span class="clock-marquee"><span id="topClock">লোড হচ্ছে...</span></span>
         </button>
-        <button class="action-btn" id="langToggle">🌐 EN</button>
-        <button class="action-btn" id="themeToggle">🌓</button>
-        <button class="action-btn" id="adminLockBtn">🔐</button>
+        <div class="corner-menu-wrap">
+          <button class="action-btn" id="cornerMenuTrigger" title="আরও অপশন">⋮</button>
+          <div class="corner-menu-dropdown" id="cornerMenuDropdown">
+            <button class="corner-menu-item" id="langToggle">🌐 EN</button>
+            <button class="corner-menu-item" id="themeToggle">🌓 থিম পরিবর্তন</button>
+            <button class="corner-menu-item" id="adminLockBtn">🔐 লগইন</button>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -1299,6 +1378,22 @@ document.getElementById("menuTrigger").addEventListener("click", () => {
   document.getElementById("sidebar").classList.toggle("open");
 });
 
+// ── 3-dot corner menu open/close ──
+const cornerMenuTrigger = document.getElementById("cornerMenuTrigger");
+const cornerMenuDropdown = document.getElementById("cornerMenuDropdown");
+cornerMenuTrigger.addEventListener("click", (e) => {
+  e.stopPropagation();
+  cornerMenuDropdown.classList.toggle("open");
+});
+document.addEventListener("click", (e) => {
+  if (!cornerMenuDropdown.contains(e.target) && e.target !== cornerMenuTrigger) {
+    cornerMenuDropdown.classList.remove("open");
+  }
+});
+cornerMenuDropdown.querySelectorAll(".corner-menu-item").forEach(btn => {
+  btn.addEventListener("click", () => cornerMenuDropdown.classList.remove("open"));
+});
+
 document.getElementById("langToggle").addEventListener("click", () => {
   currentLang = currentLang === "bn" ? "en" : "bn";
   localStorage.setItem("app-lang", currentLang);
@@ -1528,7 +1623,7 @@ function openBlogPostDetail(i) {
       <span class="card-tag">${p.tag}</span>
       <h2 style="margin: 6px 0 12px; font-weight: 800;">${p.title}</h2>
       <p style="font-weight: 500; font-size: 14.5px; line-height: 1.7; margin-bottom: 14px;">${p.subSummary}</p>
-      <p style="font-size: 14px; line-height: 1.8; color: var(--muted);">${p.desc}</p>
+      <div class="blog-content" style="color: var(--muted);">${p.desc}</div>
     </div>
   `;
   navigatePage("blogDetailPage");
@@ -1925,11 +2020,92 @@ function setupAdminBlogList() {
       <div class="form-group"><input type="text" class="form-input" value="${p.tag}" oninput="siteData.blogPosts[${i}].tag=this.value" placeholder="ট্যাগ"/></div>
       <div class="form-group"><input type="text" class="form-input" value="${p.date}" oninput="siteData.blogPosts[${i}].date=this.value" placeholder="তারিখ"/></div>
       <div class="form-group"><input type="text" class="form-input" value="${p.subSummary}" oninput="siteData.blogPosts[${i}].subSummary=this.value" placeholder="সংক্ষিপ্ত সারসংক্ষেপ"/></div>
-      <div class="form-group"><textarea class="form-textarea" oninput="siteData.blogPosts[${i}].desc=this.value" placeholder="পূর্ণ বিবরণ">${p.desc}</textarea></div>
+      <div class="form-group">
+        <label class="form-label" style="font-size: 11.5px;">পূর্ণ বিবরণ (Content)</label>
+        <div class="editor-toolbar">
+          <button type="button" title="Bold" onclick="applyBlogFormat(${i}, 'bold')"><b>B</b></button>
+          <button type="button" title="Italic" onclick="applyBlogFormat(${i}, 'italic')"><i>I</i></button>
+          <button type="button" title="তালিকা" onclick="applyBlogFormat(${i}, 'insertUnorderedList')">• তালিকা</button>
+          <button type="button" title="নতুন প্যারাগ্রাফ" onclick="applyBlogFormat(${i}, 'insertParagraph')">¶ প্যারা</button>
+          <button type="button" title="ছবি যোগ করুন (URL)" onclick="insertBlogImage(${i})">🖼️ ছবি যোগ করুন</button>
+          <button type="button" title="সব ফরম্যাট মুছুন" onclick="clearBlogFormatting(${i})">🧹 ফরম্যাট মুছুন</button>
+        </div>
+        <div class="rich-editor" id="blogDescEditor-${i}" contenteditable="true"
+             data-placeholder="এখানে আপনার পূর্ণ ব্লগ লিখুন..."
+             oninput="siteData.blogPosts[${i}].desc = sanitizeBlogHtml(this.innerHTML)"
+             onpaste="handleBlogPaste(event, ${i})">${p.desc || ""}</div>
+        <p style="font-size: 10.5px; color: var(--muted); margin-top: 6px;">পেস্ট করা লেখা স্বয়ংক্রিয়ভাবে প্লেইন টেক্সটে রূপান্তরিত হবে, যাতে ফন্ট/সাইজ সবসময় একই রকম থাকে। বোল্ড/ইতালিক/তালিকা/ছবি টুলবার থেকে যোগ করুন।</p>
+      </div>
       <button class="action-btn" onclick="deleteBlogPost(${i})" style="color: var(--danger); font-size: 11px;">✕ মুছুন</button>
     </div>
   `).join("");
 }
+// ══ Blog rich-editor helpers ══
+// Keeps only a safe, minimal tag set so font/size can never drift when saved/rendered.
+function sanitizeBlogHtml(html) {
+  const allowedTags = ["B", "STRONG", "I", "EM", "U", "BR", "P", "DIV", "UL", "OL", "LI", "IMG", "A"];
+  const temp = document.createElement("div");
+  temp.innerHTML = html;
+
+  function clean(node) {
+    [...node.childNodes].forEach(child => {
+      if (child.nodeType === 1) {
+        if (!allowedTags.includes(child.tagName)) {
+          while (child.firstChild) node.insertBefore(child.firstChild, child);
+          node.removeChild(child);
+          return;
+        }
+        [...child.attributes].forEach(attr => {
+          const name = attr.name.toLowerCase();
+          const keep = (child.tagName === "IMG" && (name === "src" || name === "alt")) ||
+                       (child.tagName === "A" && name === "href");
+          if (!keep) child.removeAttribute(attr.name);
+        });
+        if (child.tagName === "A") child.setAttribute("target", "_blank");
+        clean(child);
+      } else if (child.nodeType !== 3) {
+        node.removeChild(child);
+      }
+    });
+  }
+  clean(temp);
+  return temp.innerHTML;
+}
+
+function applyBlogFormat(i, cmd) {
+  const el = document.getElementById(`blogDescEditor-${i}`);
+  el.focus();
+  document.execCommand(cmd, false, null);
+  siteData.blogPosts[i].desc = sanitizeBlogHtml(el.innerHTML);
+}
+
+function insertBlogImage(i) {
+  const url = prompt("ছবির URL / লিংক দিন (উদাহরণ: https://example.com/image.jpg)");
+  if (!url || !url.trim()) return;
+  const el = document.getElementById(`blogDescEditor-${i}`);
+  el.focus();
+  document.execCommand("insertHTML", false, `<img src="${url.trim()}" alt="blog image"><br>`);
+  siteData.blogPosts[i].desc = sanitizeBlogHtml(el.innerHTML);
+}
+
+// Forces pasted content (from Word/Facebook/other sites) to plain text so it can never bring in a different font/size.
+function handleBlogPaste(e, i) {
+  e.preventDefault();
+  const text = (e.clipboardData || window.clipboardData).getData("text/plain");
+  document.execCommand("insertText", false, text);
+  siteData.blogPosts[i].desc = sanitizeBlogHtml(document.getElementById(`blogDescEditor-${i}`).innerHTML);
+}
+
+function clearBlogFormatting(i) {
+  const el = document.getElementById(`blogDescEditor-${i}`);
+  let html = el.innerHTML
+    .replace(/<\/?(b|strong|i|em|u)[^>]*>/gi, "")
+    .replace(/<\/?span[^>]*>/gi, "");
+  el.innerHTML = html;
+  siteData.blogPosts[i].desc = sanitizeBlogHtml(el.innerHTML);
+  showToast("ফরম্যাট মুছে ফেলা হয়েছে ✅");
+}
+
 function addBlogPost() {
   siteData.blogPosts.push({ title: "নতুন পোস্ট", tag: "টেক", date: "", subSummary: "", desc: "", image: "", c1: "#6366f1", c2: "#4f46e5" });
   setupAdminBlogList();
