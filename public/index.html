@@ -2021,6 +2021,15 @@ function setupAdminBlogList() {
       <div class="form-group"><input type="text" class="form-input" value="${p.date}" oninput="siteData.blogPosts[${i}].date=this.value" placeholder="তারিখ"/></div>
       <div class="form-group"><input type="text" class="form-input" value="${p.subSummary}" oninput="siteData.blogPosts[${i}].subSummary=this.value" placeholder="সংক্ষিপ্ত সারসংক্ষেপ"/></div>
       <div class="form-group">
+        <label class="form-label" style="font-size: 11.5px;">কভার ছবি (Thumbnail)</label>
+        <input type="text" class="form-input" id="blogImgUrl-${i}"
+               value="${p.image && !p.image.startsWith("data:") ? p.image : ""}"
+               placeholder="ছবির URL লিংক দিন (অথবা নিচ থেকে আপলোড করুন)"
+               oninput="siteData.blogPosts[${i}].image=this.value; updateBlogImgPreview(${i})"/>
+        <input type="file" accept="image/*" class="form-file" style="margin-top: 8px;" onchange="handleBlogImageUpload(event, ${i})"/>
+        <img id="blogImgPreview-${i}" class="file-preview-thumb ${p.image ? "show" : ""}" src="${p.image || ""}"/>
+      </div>
+      <div class="form-group">
         <label class="form-label" style="font-size: 11.5px;">পূর্ণ বিবরণ (Content)</label>
         <div class="editor-toolbar">
           <button type="button" title="Bold" onclick="applyBlogFormat(${i}, 'bold')"><b>B</b></button>
@@ -2104,6 +2113,28 @@ function clearBlogFormatting(i) {
   el.innerHTML = html;
   siteData.blogPosts[i].desc = sanitizeBlogHtml(el.innerHTML);
   showToast("ফরম্যাট মুছে ফেলা হয়েছে ✅");
+}
+
+function updateBlogImgPreview(i) {
+  const img = document.getElementById(`blogImgPreview-${i}`);
+  if (!img) return;
+  const url = siteData.blogPosts[i].image;
+  if (url) { img.src = url; img.classList.add("show"); }
+  else { img.src = ""; img.classList.remove("show"); }
+}
+
+async function handleBlogImageUpload(event, i) {
+  const file = event.target.files[0];
+  if (!file) return;
+  showToast("ছবি প্রসেস হচ্ছে...");
+  try {
+    const dataUrl = await resizeImageFile(file);
+    siteData.blogPosts[i].image = dataUrl;
+    setupAdminBlogList();
+    showToast("ছবি যুক্ত হয়েছে ✅ — এখন 'সংরক্ষণ করুন' চাপুন");
+  } catch (err) {
+    showToast("ছবি আপলোড ব্যর্থ হয়েছে!");
+  }
 }
 
 function addBlogPost() {
