@@ -1043,13 +1043,26 @@ html { scroll-behavior: smooth; }
                   <label class="form-label">ঠিকানা</label>
                   <input type="text" class="form-input" id="admContactLoc"/>
                 </div>
+                <div class="form-group">
+                  <label class="form-label">সামাজিক মাধ্যম লিংক (ফেসবুক, ইউটিউব, ইনস্টাগ্রাম, হোয়াটসঅ্যাপ, লিংকডইন ইত্যাদি)</label>
+                  <div id="admSocialsList"></div>
+                  <button class="action-btn" onclick="addSocialLink()" style="width: 100%; margin: 10px 0;">+ নতুন সামাজিক লিংক যোগ করুন</button>
+                </div>
                 <button class="btn-submit" onclick="saveAdminContact()">সংরক্ষণ করুন</button>
               </div>
 
               <!-- NEWSLETTER PANEL -->
               <div class="admin-panel" id="admNewsletter">
-                <p id="admNlCount" style="margin-bottom: 12px; font-weight: 600;"></p>
-                <div id="admNlList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                <div style="margin-bottom: 28px;">
+                  <h3 style="margin-bottom: 12px; font-size: 15px;">📩 যোগাযোগ ফর্মের বার্তাসমূহ</h3>
+                  <p id="admMsgCount" style="margin-bottom: 12px; font-weight: 600; color: var(--muted); font-size: 12.5px;"></p>
+                  <div id="admMsgList" style="display: flex; flex-direction: column; gap: 10px;"></div>
+                </div>
+                <div style="border-top: 1px solid var(--border); padding-top: 22px;">
+                  <h3 style="margin-bottom: 12px; font-size: 15px;">📬 নিউজলেটার সাবস্ক্রাইবার</h3>
+                  <p id="admNlCount" style="margin-bottom: 12px; font-weight: 600;"></p>
+                  <div id="admNlList" style="display: flex; flex-direction: column; gap: 8px;"></div>
+                </div>
               </div>
 
               <!-- BRAND PANEL -->
@@ -1716,11 +1729,43 @@ function handleContactImagePreview(event) {
   reader.readAsDataURL(file);
 }
 
-function readFileAsBase64(file) {
+// Automatically resizes/compresses any uploaded image client-side so it can
+// always be sent, regardless of the original file size or resolution.
+function resizeImageFile(file, maxDimension = 1000, quality = 0.72) {
   return new Promise((resolve, reject) => {
     if (!file) { resolve(""); return; }
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDimension || height > maxDimension) {
+          if (width >= height) {
+            height = Math.round(height * (maxDimension / width));
+            width = maxDimension;
+          } else {
+            width = Math.round(width * (maxDimension / height));
+            height = maxDimension;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+
+        let q = quality;
+        let dataUrl = canvas.toDataURL("image/jpeg", q);
+        // Keep shrinking quality until the payload is comfortably small.
+        while (dataUrl.length > 500 * 1024 && q > 0.3) {
+          q -= 0.1;
+          dataUrl = canvas.toDataURL("image/jpeg", q);
+        }
+        resolve(dataUrl);
+      };
+      img.onerror = reject;
+      img.src = reader.result;
+    };
     reader.onerror = reject;
     reader.readAsDataURL(file);
   });
@@ -1739,17 +1784,12 @@ document.getElementById("contactForm").addEventListener("submit", async (e) => {
   try {
     let imageData = "";
     if (imageFile) {
-      if (imageFile.size > 700 * 1024) {
-        showToast(currentLang === "bn" ? "ইমেজ ইয়জে বাড়ুয়! রেসালুশন কমানতা" : "Image is too large!");
-        btn.disabled = false;
-        return;
-      }
-      imageData = await readFileAsBase64(imageFile);
+      imageData = await resizeImageFile(imageFile);
     }
     await db.collection("contactMessages").add({
       name, email, phone, message: msg, image: imageData, date: firebase.firestore.FieldValue.serverTimestamp()
     });
-    showToast(currentLang === "bn" ? "বার্তাটি সফলভাবে পাঠানো হয়েছে! ✅" : "Message sent successfully! ✅");
+    showToast(currentLang === "bn" ? "বার্তাটি সফলভাবে পাঠানো হয়েছে! ✅" : "Message sent successfully! ✅");
     document.getElementById("contactForm").reset();
     document.getElementById("imagePreviewThumb").classList.remove("show");
   } catch (err) {
@@ -1758,7 +1798,6 @@ document.getElementById("contactForm").addEventListener("submit", async (e) => {
     btn.disabled = false;
   }
 });
-
 
 function showToast(msg) {
   const t = document.getElementById("toast");
@@ -1818,7 +1857,7 @@ document.querySelectorAll(".admin-tab-btn").forEach(btn => {
     const target = document.getElementById(btn.dataset.panel);
     if (target) {
       target.classList.add("active");
-      if (btn.dataset.panel === "admNewsletter") loadNewsletterSubscribers();
+      if (btn.dataset.panel === "admNewsletter") { loadContactMessages(); loadNewsletterSubscribers(); }
     }
   });
 });
@@ -1839,6 +1878,7 @@ function setupAdminPanels() {
   document.getElementById("admContactEmail").value = siteData.contact.email;
   document.getElementById("admContactPhone").value = siteData.contact.phone;
   document.getElementById("admContactLoc").value = siteData.contact.location;
+  setupAdminSocialsList();
 
   document.getElementById("admBrandName").value = siteData.brand.name;
   document.getElementById("admLogoText").value = siteData.brand.logoText;
@@ -1972,6 +2012,32 @@ async function saveAdminAbout() {
   showToast("সম্পর্কে ও পরিচিতি ডাটা সেভ হয়েছে! ✅");
 }
 
+function setupAdminSocialsList() {
+  const listEl = document.getElementById("admSocialsList");
+  if (!siteData.contact.socials) siteData.contact.socials = [];
+  listEl.innerHTML = siteData.contact.socials.map((s, i) => `
+    <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+      <span style="font-size: 18px; width: 26px; text-align: center; flex-shrink: 0;">${getSocialIcon(s.label)}</span>
+      <input type="text" class="form-input" style="flex: 0 0 130px;" value="${s.label}" oninput="siteData.contact.socials[${i}].label=this.value; refreshSocialIcon(${i})" placeholder="নাম (Facebook, YouTube)"/>
+      <input type="text" class="form-input" style="flex: 1;" value="${s.url}" oninput="siteData.contact.socials[${i}].url=this.value" placeholder="লিংক (https://...)"/>
+      <button class="action-btn" onclick="deleteSocialLink(${i})" style="color: var(--danger); flex-shrink: 0;">✕</button>
+    </div>
+  `).join("") || `<p style="font-size: 12px; color: var(--muted);">এখনো কোনো সামাজিক লিংক যোগ করা হয়নি।</p>`;
+}
+function refreshSocialIcon(i) {
+  const row = document.getElementById("admSocialsList").children[i];
+  if (row) row.querySelector("span").textContent = getSocialIcon(siteData.contact.socials[i].label);
+}
+function addSocialLink() {
+  if (!siteData.contact.socials) siteData.contact.socials = [];
+  siteData.contact.socials.push({ label: "নতুন লিংক", url: "https://" });
+  setupAdminSocialsList();
+}
+function deleteSocialLink(i) {
+  siteData.contact.socials.splice(i, 1);
+  setupAdminSocialsList();
+}
+
 async function saveAdminContact() {
   siteData.contact.email = document.getElementById("admContactEmail").value;
   siteData.contact.phone = document.getElementById("admContactPhone").value;
@@ -1986,6 +2052,75 @@ async function saveAdminBrand() {
   siteData.brand.logoImage = document.getElementById("admLogoImage").value;
   await saveSiteData();
   showToast("ব্র্যান্ডিং সেটিংস ডাটা সেভ হয়েছে! ✅");
+}
+
+let contactMessagesCache = [];
+
+async function loadContactMessages() {
+  const listEl = document.getElementById("admMsgList");
+  const countEl = document.getElementById("admMsgCount");
+  listEl.innerHTML = "লোড হচ্ছে...";
+  try {
+    const snap = await db.collection("contactMessages").orderBy("date", "desc").get();
+    if (snap.empty) {
+      countEl.textContent = "কোনো বার্তা পাওয়া যায়নি।";
+      listEl.innerHTML = "";
+      contactMessagesCache = [];
+      return;
+    }
+    countEl.textContent = `মোট বার্তা: ${snap.size} টি`;
+    contactMessagesCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    listEl.innerHTML = contactMessagesCache.map((v, i) => {
+      const dt = v.date && v.date.toDate ? v.date.toDate().toLocaleString() : "";
+      const preview = (v.message || "").slice(0, 60) + ((v.message || "").length > 60 ? "..." : "");
+      return `
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
+          <div style="padding: 12px; cursor: pointer; display: flex; justify-content: space-between; gap: 10px; align-items: center;" onclick="toggleMsgDetail(${i})">
+            <div style="min-width: 0;">
+              <p style="font-weight: 600; font-size: 13px;">${v.name || "(নাম নেই)"} ${v.image ? "📎" : ""}</p>
+              <p style="font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${preview}</p>
+            </div>
+            <span style="font-size: 11px; color: var(--muted); flex-shrink: 0;">${dt}</span>
+          </div>
+          <div id="msgDetail-${i}" style="display: none; padding: 0 12px 14px; border-top: 1px solid var(--border);">
+            <p style="font-size: 12px; margin-top: 10px;"><strong>ইমেইল:</strong> ${v.email || "-"}</p>
+            <p style="font-size: 12px; margin-top: 4px;"><strong>ফোন:</strong> ${v.phone || "-"}</p>
+            <p style="font-size: 12px; margin-top: 8px; white-space: pre-wrap; line-height: 1.6;">${v.message || ""}</p>
+            ${v.image ? `<img src="${v.image}" style="max-width: 100%; border-radius: 8px; margin-top: 10px;"/>` : ""}
+            <div style="display: flex; gap: 8px; margin-top: 12px;">
+              <button class="action-btn" onclick="replyToMessage(${i})">↩️ রিপ্লাই করুন</button>
+              <button class="action-btn" onclick="deleteContactMessage('${v.id}', ${i})" style="color: var(--danger);">✕ মুছুন</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  } catch (err) {
+    countEl.textContent = "বার্তা লোড করতে ত্রুটি!";
+  }
+}
+
+function toggleMsgDetail(i) {
+  const el = document.getElementById(`msgDetail-${i}`);
+  if (el) el.style.display = el.style.display === "none" ? "block" : "none";
+}
+
+function replyToMessage(i) {
+  const v = contactMessagesCache[i];
+  if (!v || !v.email) { showToast("এই বার্তায় কোনো ইমেইল নেই!"); return; }
+  const subject = encodeURIComponent("Re: আপনার বার্তা");
+  const body = encodeURIComponent("প্রিয় " + (v.name || "") + ",\n\n");
+  window.location.href = `mailto:${v.email}?subject=${subject}&body=${body}`;
+}
+
+async function deleteContactMessage(id, i) {
+  try {
+    await db.collection("contactMessages").doc(id).delete();
+    showToast("বার্তাটি মুছে ফেলা হয়েছে! ✅");
+    loadContactMessages();
+  } catch (err) {
+    showToast("মুছতে ব্যর্থ!");
+  }
 }
 
 async function loadNewsletterSubscribers() {
