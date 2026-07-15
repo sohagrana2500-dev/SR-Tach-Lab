@@ -114,12 +114,12 @@
 
   <!-- ================= BACKGROUND LAYER ================= -->
   <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
-    <!-- Forest Background Image from standard unsplash nature -->
-    <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transform scale-105 saturate-110 opacity-75"
-         style="background-image: url('https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1920&q=80');"></div>
+    <!-- Forest Background Image from standard unsplash nature - bright sunlit wood -->
+    <div class="absolute inset-0 bg-cover bg-center bg-no-repeat transform scale-105 saturate-110 opacity-80"
+         style="background-image: url('https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1920&q=80');"></div>
     
-    <!-- Deep Mist / Gradient shade overlay -->
-    <div class="absolute inset-0 bg-gradient-to-b from-stone-950/20 via-stone-900/50 to-stone-950/90 mix-blend-multiply"></div>
+    <!-- Deep Mist / Gradient shade overlay (vibrant, no blend multiply to prevent pitch blackness) -->
+    <div class="absolute inset-0 bg-gradient-to-b from-stone-950/20 via-stone-900/35 to-stone-950/85"></div>
     
     <!-- Organic glowing ambiance -->
     <div class="absolute top-0 right-1/4 w-[500px] h-[500px] rounded-full bg-emerald-500/10 blur-[120px] animate-pulse-slow"></div>
@@ -167,7 +167,7 @@
 
     <!-- Corner 3-Dot Dropdown Trigger -->
     <div class="relative">
-      <button onclick="toggleCornerMenu()" class="p-3 rounded-2xl backdrop-blur-md bg-stone-900/45 border border-emerald-500/20 text-emerald-300 hover:text-white hover:bg-emerald-500/10 active:scale-95 transition-all shadow-md cursor-pointer">
+      <button id="corner-menu-trigger" onclick="toggleCornerMenu(event)" class="p-3 rounded-2xl backdrop-blur-md bg-stone-900/45 border border-emerald-500/20 text-emerald-300 hover:text-white hover:bg-emerald-500/10 active:scale-95 transition-all shadow-md cursor-pointer">
         <i data-lucide="more-vertical" class="w-5 h-5"></i>
       </button>
 
@@ -917,7 +917,8 @@
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
 
-    function toggleCornerMenu() {
+    function toggleCornerMenu(event) {
+      if (event) event.stopPropagation();
       const menu = document.getElementById("corner-menu");
       menu.classList.toggle("hidden");
     }
