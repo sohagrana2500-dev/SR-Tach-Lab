@@ -1486,14 +1486,26 @@ document.querySelectorAll(".visual-btn").forEach(btn => {
   });
 });
 
-function createThumbnail(img, title, c1 = "#6366f1", c2 = "#4f46e5") {
-  if (img) return `<img src="${img}" alt="${title}"/>`;
+function placeholderThumbHtml(title, c1 = "#6366f1", c2 = "#4f46e5") {
   const text = (title || "IT").replace(/\s+/g, "").slice(0, 2).toUpperCase();
   return `
     <div class="card-placeholder-art" style="background: linear-gradient(135deg, ${c1}, ${c2})">
       <span>${text}</span>
     </div>
   `;
+}
+
+function handleThumbImgError(imgEl, c1, c2, title) {
+  imgEl.outerHTML = placeholderThumbHtml(title, c1, c2);
+}
+
+function createThumbnail(img, title, c1 = "#6366f1", c2 = "#4f46e5") {
+  if (img) {
+    const safeAlt = (title || "").replace(/"/g, "&quot;");
+    const safeTitleAttr = (title || "IT").replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+    return `<img src="${img}" alt="${safeAlt}" loading="lazy" onerror="handleThumbImgError(this, '${c1}', '${c2}', '${safeTitleAttr}')"/>`;
+  }
+  return placeholderThumbHtml(title, c1, c2);
 }
 
 function getSocialIcon(label = "") {
@@ -2024,10 +2036,13 @@ function setupAdminBlogList() {
         <label class="form-label" style="font-size: 11.5px;">কভার ছবি (Thumbnail)</label>
         <input type="text" class="form-input" id="blogImgUrl-${i}"
                value="${p.image && !p.image.startsWith("data:") ? p.image : ""}"
-               placeholder="ছবির URL লিংক দিন (অথবা নিচ থেকে আপলোড করুন)"
+               placeholder="সরাসরি ছবির লিংক (.jpg/.png/.webp দিয়ে শেষ হওয়া)"
                oninput="siteData.blogPosts[${i}].image=this.value; updateBlogImgPreview(${i})"/>
+        <p style="font-size: 10.5px; color: var(--muted); margin-top: 4px;">⚠️ শুধু সরাসরি ছবির লিংক কাজ করবে (যেমন ...jpg/.png দিয়ে শেষ হয়)। কোনো ওয়েবপেজ, Google Drive শেয়ার লিংক বা Facebook পোস্ট লিংক দিলে ছবি দেখাবে না।</p>
         <input type="file" accept="image/*" class="form-file" style="margin-top: 8px;" onchange="handleBlogImageUpload(event, ${i})"/>
-        <img id="blogImgPreview-${i}" class="file-preview-thumb ${p.image ? "show" : ""}" src="${p.image || ""}"/>
+        <img id="blogImgPreview-${i}" class="file-preview-thumb ${p.image ? "show" : ""}" ${p.image ? `src="${p.image}"` : ""}
+             onerror="handlePreviewImgError(this, ${i})" onload="handlePreviewImgLoad(this, ${i})"/>
+        <p id="blogImgErrNote-${i}" style="display:none; font-size: 10.5px; color: var(--danger); margin-top: 4px;">❌ এই লিংক থেকে ছবি লোড করা যায়নি। সরাসরি ছবির লিংক দিন অথবা ফাইল আপলোড করুন।</p>
       </div>
       <div class="form-group">
         <label class="form-label" style="font-size: 11.5px;">পূর্ণ বিবরণ (Content)</label>
@@ -2115,12 +2130,33 @@ function clearBlogFormatting(i) {
   showToast("ফরম্যাট মুছে ফেলা হয়েছে ✅");
 }
 
+function handlePreviewImgError(imgEl, i) {
+  imgEl.classList.remove("show");
+  imgEl.src = "";
+  const note = document.getElementById(`blogImgErrNote-${i}`);
+  if (note) note.style.display = "block";
+}
+
+function handlePreviewImgLoad(imgEl, i) {
+  if (!imgEl.src) return;
+  imgEl.classList.add("show");
+  const note = document.getElementById(`blogImgErrNote-${i}`);
+  if (note) note.style.display = "none";
+}
+
 function updateBlogImgPreview(i) {
   const img = document.getElementById(`blogImgPreview-${i}`);
+  const note = document.getElementById(`blogImgErrNote-${i}`);
   if (!img) return;
   const url = siteData.blogPosts[i].image;
-  if (url) { img.src = url; img.classList.add("show"); }
-  else { img.src = ""; img.classList.remove("show"); }
+  if (url) {
+    img.src = url;
+    img.classList.add("show");
+  } else {
+    img.removeAttribute("src");
+    img.classList.remove("show");
+    if (note) note.style.display = "none";
+  }
 }
 
 async function handleBlogImageUpload(event, i) {
