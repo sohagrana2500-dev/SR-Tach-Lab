@@ -1125,6 +1125,8 @@ html { scroll-behavior: smooth; }
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<!-- EmailJS: lets the admin panel send real reply emails without a backend server -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
 <script>
 // ══════════════════════════ Firebase Configuration ══════════════════════════
@@ -1142,6 +1144,18 @@ const auth = firebase.auth();
 const db = firebase.firestore();
 const ADMIN_EMAIL = "sohagrana.work@gmail.com";
 const SITE_DOC = db.collection("site").doc("main");
+
+// ══════════════════════════ EmailJS Configuration (for in-panel replies) ══════════════════════════
+// Create a free account at https://www.emailjs.com , add an Email Service + Email Template,
+// then paste your own IDs below. The template should accept these variables:
+// {{to_email}}, {{to_name}}, {{from_name}}, {{original_message}}, {{reply_message}}
+const EMAILJS_PUBLIC_KEY  = "YOUR_EMAILJS_PUBLIC_KEY";
+const EMAILJS_SERVICE_ID  = "YOUR_EMAILJS_SERVICE_ID";
+const EMAILJS_TEMPLATE_ID = "YOUR_EMAILJS_TEMPLATE_ID";
+const EMAILJS_READY = !EMAILJS_PUBLIC_KEY.startsWith("YOUR_") && !EMAILJS_SERVICE_ID.startsWith("YOUR_") && !EMAILJS_TEMPLATE_ID.startsWith("YOUR_");
+if (window.emailjs && EMAILJS_READY) {
+  emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+}
 
 // ══════════════════════════ Bilingual Translations ══════════════════════════
 const trans = {
@@ -2068,56 +2082,144 @@ async function loadContactMessages() {
       contactMessagesCache = [];
       return;
     }
-    countEl.textContent = `মোট বার্তা: ${snap.size} টি`;
     contactMessagesCache = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    listEl.innerHTML = contactMessagesCache.map((v, i) => {
-      const dt = v.date && v.date.toDate ? v.date.toDate().toLocaleString() : "";
-      const preview = (v.message || "").slice(0, 60) + ((v.message || "").length > 60 ? "..." : "");
-      return `
-        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; overflow: hidden;">
-          <div style="padding: 12px; cursor: pointer; display: flex; justify-content: space-between; gap: 10px; align-items: center;" onclick="toggleMsgDetail(${i})">
-            <div style="min-width: 0;">
-              <p style="font-weight: 600; font-size: 13px;">${v.name || "(নাম নেই)"} ${v.image ? "📎" : ""}</p>
-              <p style="font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${preview}</p>
-            </div>
-            <span style="font-size: 11px; color: var(--muted); flex-shrink: 0;">${dt}</span>
-          </div>
-          <div id="msgDetail-${i}" style="display: none; padding: 0 12px 14px; border-top: 1px solid var(--border);">
-            <p style="font-size: 12px; margin-top: 10px;"><strong>ইমেইল:</strong> ${v.email || "-"}</p>
-            <p style="font-size: 12px; margin-top: 4px;"><strong>ফোন:</strong> ${v.phone || "-"}</p>
-            <p style="font-size: 12px; margin-top: 8px; white-space: pre-wrap; line-height: 1.6;">${v.message || ""}</p>
-            ${v.image ? `<img src="${v.image}" style="max-width: 100%; border-radius: 8px; margin-top: 10px;"/>` : ""}
-            <div style="display: flex; gap: 8px; margin-top: 12px;">
-              <button class="action-btn" onclick="replyToMessage(${i})">↩️ রিপ্লাই করুন</button>
-              <button class="action-btn" onclick="deleteContactMessage('${v.id}', ${i})" style="color: var(--danger);">✕ মুছুন</button>
-            </div>
-          </div>
-        </div>
-      `;
-    }).join("");
+    renderMsgList();
   } catch (err) {
     countEl.textContent = "বার্তা লোড করতে ত্রুটি!";
   }
 }
 
-function toggleMsgDetail(i) {
-  const el = document.getElementById(`msgDetail-${i}`);
-  if (el) el.style.display = el.style.display === "none" ? "block" : "none";
+function renderMsgList() {
+  const listEl = document.getElementById("admMsgList");
+  const countEl = document.getElementById("admMsgCount");
+  const unreadCount = contactMessagesCache.filter(v => !v.read).length;
+  countEl.textContent = unreadCount > 0
+    ? `মোট বার্তা: ${contactMessagesCache.length} টি  •  অপঠিত: ${unreadCount} টি`
+    : `মোট বার্তা: ${contactMessagesCache.length} টি`;
+
+  listEl.innerHTML = contactMessagesCache.map((v, i) => {
+    const dt = v.date && v.date.toDate ? v.date.toDate().toLocaleString() : "";
+    const preview = (v.message || "").slice(0, 60) + ((v.message || "").length > 60 ? "..." : "");
+    const isUnread = !v.read;
+    const hasReply = !!v.adminReply;
+    const replyDt = v.repliedAt && v.repliedAt.toDate ? v.repliedAt.toDate().toLocaleString() : "";
+    return `
+      <div style="background: var(--bg-card); border: 1px solid ${isUnread ? "var(--accent)" : "var(--border)"}; border-radius: 8px; overflow: hidden;">
+        <div style="padding: 12px; cursor: pointer; display: flex; justify-content: space-between; gap: 10px; align-items: center;" onclick="toggleMsgDetail(${i})">
+          <div style="min-width: 0; display: flex; align-items: center; gap: 8px;">
+            ${isUnread ? `<span title="অপঠিত" style="width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0;"></span>` : ""}
+            <div style="min-width: 0;">
+              <p style="font-weight: ${isUnread ? "700" : "500"}; font-size: 13px;">${v.name || "(নাম নেই)"} ${v.image ? "📎" : ""} ${hasReply ? "✅" : ""}</p>
+              <p style="font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 260px;">${preview}</p>
+            </div>
+          </div>
+          <span style="font-size: 11px; color: var(--muted); flex-shrink: 0;">${dt}</span>
+        </div>
+        <div id="msgDetail-${i}" style="display: none; padding: 0 12px 14px; border-top: 1px solid var(--border);">
+          <p style="font-size: 12px; margin-top: 10px;"><strong>ইমেইল:</strong> ${v.email || "-"}</p>
+          <p style="font-size: 12px; margin-top: 4px;"><strong>ফোন:</strong> ${v.phone || "-"}</p>
+          <p style="font-size: 12px; margin-top: 8px; white-space: pre-wrap; line-height: 1.6;">${v.message || ""}</p>
+          ${v.image ? `<img src="${v.image}" style="max-width: 100%; border-radius: 8px; margin-top: 10px;"/>` : ""}
+
+          ${hasReply ? `
+            <div style="margin-top: 14px; background: var(--accent-glow); border-radius: 8px; padding: 10px 12px;">
+              <p style="font-size: 11px; color: var(--accent); font-weight: 700; margin-bottom: 4px;">আপনার উত্তর ${replyDt ? "• " + replyDt : ""}</p>
+              <p style="font-size: 12.5px; white-space: pre-wrap; line-height: 1.6;">${v.adminReply}</p>
+            </div>
+          ` : ""}
+
+          <div style="margin-top: 14px;">
+            <label class="form-label" style="font-size: 11.5px;">${hasReply ? "নতুন উত্তর পাঠান" : "উত্তর লিখুন"}</label>
+            <textarea class="form-textarea" id="replyBox-${i}" placeholder="এখানে আপনার রিপ্লাই লিখুন..." style="min-height: 70px;"></textarea>
+          </div>
+
+          <div style="display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap;">
+            <button class="btn-submit" id="replyBtn-${i}" onclick="sendReply(${i})">📤 রিপ্লাই পাঠান</button>
+            <button class="action-btn" onclick="toggleReadStatus(${i})">${isUnread ? "✓ পঠিত হিসেবে চিহ্নিত করুন" : "○ অপঠিত হিসেবে চিহ্নিত করুন"}</button>
+            <button class="action-btn" onclick="deleteContactMessage('${v.id}', ${i})" style="color: var(--danger); margin-left: auto;">✕ মুছুন</button>
+          </div>
+          ${!EMAILJS_READY ? `<p style="font-size: 10.5px; color: var(--muted); margin-top: 8px;">⚠️ ইমেইল পাঠানো সেবা (EmailJS) এখনো কনফিগার করা হয়নি—উত্তর সেভ হবে কিন্তু ইমেইল পাঠানো যাবে না।</p>` : ""}
+        </div>
+      </div>
+    `;
+  }).join("");
 }
 
-function replyToMessage(i) {
+async function toggleMsgDetail(i) {
+  const el = document.getElementById(`msgDetail-${i}`);
+  if (!el) return;
+  const opening = el.style.display === "none";
+  el.style.display = opening ? "block" : "none";
   const v = contactMessagesCache[i];
-  if (!v || !v.email) { showToast("এই বার্তায় কোনো ইমেইল নেই!"); return; }
-  const subject = encodeURIComponent("Re: আপনার বার্তা");
-  const body = encodeURIComponent("প্রিয় " + (v.name || "") + ",\n\n");
-  window.location.href = `mailto:${v.email}?subject=${subject}&body=${body}`;
+  if (opening && v && !v.read) {
+    v.read = true;
+    renderMsgList();
+    document.getElementById(`msgDetail-${i}`).style.display = "block";
+    try { await db.collection("contactMessages").doc(v.id).update({ read: true }); } catch (err) {}
+  }
+}
+
+async function toggleReadStatus(i) {
+  const v = contactMessagesCache[i];
+  if (!v) return;
+  v.read = !v.read;
+  renderMsgList();
+  try { await db.collection("contactMessages").doc(v.id).update({ read: v.read }); } catch (err) {}
+}
+
+async function sendReply(i) {
+  const v = contactMessagesCache[i];
+  const box = document.getElementById(`replyBox-${i}`);
+  const btn = document.getElementById(`replyBtn-${i}`);
+  const replyText = box ? box.value.trim() : "";
+  if (!replyText) { showToast("প্রথমে উত্তরটি লিখুন!"); return; }
+  if (!v.email) { showToast("এই বার্তায় কোনো ইমেইল নেই!"); return; }
+
+  btn.disabled = true;
+  btn.textContent = "পাঠানো হচ্ছে...";
+
+  try {
+    if (EMAILJS_READY && window.emailjs) {
+      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+        to_email: v.email,
+        to_name: v.name || "",
+        from_name: siteData && siteData.brand ? siteData.brand.name : "SR TECH LAB",
+        original_message: v.message || "",
+        reply_message: replyText
+      });
+    }
+
+    await db.collection("contactMessages").doc(v.id).update({
+      adminReply: replyText,
+      repliedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      read: true
+    });
+
+    v.adminReply = replyText;
+    v.repliedAt = { toDate: () => new Date() };
+    v.read = true;
+
+    showToast(EMAILJS_READY
+      ? "রিপ্লাই পাঠানো হয়েছে! ✅"
+      : "উত্তর সেভ হয়েছে (ইমেইল সেবা কনফিগার বাকি) ⚠️");
+    renderMsgList();
+  } catch (err) {
+    showToast("রিপ্লাই পাঠাতে ব্যর্থ হয়েছে!");
+    btn.disabled = false;
+    btn.textContent = "📤 রিপ্লাই পাঠান";
+  }
 }
 
 async function deleteContactMessage(id, i) {
+  const ok = window.confirm(currentLang === "bn"
+    ? "আপনি কি নিশ্চিত এই বার্তাটি মুছে ফেলতে চান? এটি পুনরুদ্ধার করা যাবে না।"
+    : "Delete this message permanently? This cannot be undone.");
+  if (!ok) return;
   try {
     await db.collection("contactMessages").doc(id).delete();
+    contactMessagesCache = contactMessagesCache.filter(v => v.id !== id);
     showToast("বার্তাটি মুছে ফেলা হয়েছে! ✅");
-    loadContactMessages();
+    renderMsgList();
   } catch (err) {
     showToast("মুছতে ব্যর্থ!");
   }
