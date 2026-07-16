@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="bn" class="dark">
 <head>
@@ -147,7 +148,7 @@
   <header class="relative w-full max-w-7xl mx-auto px-4 pt-6 pb-2 z-50 flex items-center justify-between">
     <!-- Brand badge -->
     <div class="flex items-center gap-3 backdrop-blur-md bg-stone-900/45 border border-emerald-500/20 px-4 py-2.5 rounded-2xl shadow-lg">
-      <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center font-bold text-white shadow-md shadow-emerald-500/20">
+      <div id="logo-box" class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center font-bold text-white shadow-md shadow-emerald-500/20">
         <span id="logo-text" class="text-sm tracking-wider font-mono">SR</span>
       </div>
       <div>
@@ -453,6 +454,9 @@
           <button onclick="setAdminTab('inbox')" id="tab-adm-inbox" class="tab-adm-btn w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold cursor-pointer text-left text-stone-300 hover:bg-stone-900/60">
             <i data-lucide="mail" class="w-4 h-4"></i><span>ইনবক্স বার্তা</span>
           </button>
+          <button onclick="setAdminTab('faq')" id="tab-adm-faq" class="tab-adm-btn w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold cursor-pointer text-left text-stone-300 hover:bg-stone-900/60">
+            <i data-lucide="help-circle" class="w-4 h-4"></i><span>FAQ প্রশ্নউত্তর</span>
+          </button>
           <button onclick="logoutAdmin()" class="w-full flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-red-400 hover:bg-red-500/10 cursor-pointer text-left border border-red-500/10 mt-4">
             <i data-lucide="log-out" class="w-4 h-4"></i><span>লগআউট করুন</span>
           </button>
@@ -484,6 +488,23 @@
                   <input type="text" id="edit-logo-text" class="w-full bg-stone-950 border border-emerald-500/20 rounded-xl px-4 py-2.5 text-xs text-stone-200 focus:outline-none focus:border-emerald-500/40" />
                 </div>
               </div>
+              <div class="space-y-1.5">
+                <label class="text-[10px] uppercase font-mono text-stone-400">লোগো ছবি (আপলোড)</label>
+                <div class="flex items-center gap-3 flex-wrap">
+                  <div id="logo-preview-box" class="w-14 h-14 rounded-xl overflow-hidden border border-emerald-500/20 bg-stone-950 flex items-center justify-center shrink-0">
+                    <img id="logo-preview-img" src="" alt="Logo" class="w-full h-full object-cover hidden" />
+                    <i data-lucide="image" class="w-5 h-5 text-stone-500" id="logo-preview-icon"></i>
+                  </div>
+                  <button type="button" onclick="document.getElementById('logo-file-input').click()" class="px-4 py-2.5 rounded-xl bg-stone-900 border border-dashed border-emerald-500/30 hover:border-emerald-500/60 text-xs text-stone-300 flex items-center gap-1.5 cursor-pointer">
+                    <i data-lucide="upload" class="w-4 h-4 text-emerald-400"></i>
+                    <span>লোগো আপলোড করুন</span>
+                  </button>
+                  <input type="file" id="logo-file-input" accept="image/*" onchange="handleLogoUpload(event)" class="hidden" />
+                  <button type="button" onclick="removeLogoImage()" class="px-3 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs cursor-pointer">✕ মুছুন</button>
+                </div>
+                <p class="text-[9px] text-stone-500">ছবি আপলোড করলে অটোমেটিক রিসাইজ হয়ে যাবে। ছবি না দিলে টেক্সট লোগো (উপরে) দেখাবে।</p>
+              </div>
+
               <div class="space-y-1.5">
                 <label class="text-[10px] uppercase font-mono text-stone-400">হিরো বিবরণ (Welcome tag)</label>
                 <textarea id="edit-hero-desc" rows="2" class="w-full bg-stone-950 border border-emerald-500/20 rounded-xl px-4 py-2.5 text-xs text-stone-200 focus:outline-none focus:border-emerald-500/40 resize-none"></textarea>
@@ -584,6 +605,33 @@
               </div>
             </div>
 
+            
+            <!-- SECTION 4: ADMIN SECURITY -->
+            <div class="p-5 rounded-2xl bg-stone-900/40 border border-emerald-500/15 space-y-4">
+              <h4 class="text-xs font-bold text-emerald-400 uppercase tracking-wider font-mono flex items-center gap-2">
+                <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+                <span>৪. অ্যাডমিন পাসওয়ার্ড পরিবর্তন</span>
+              </h4>
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="space-y-1.5">
+                  <label class="text-[10px] uppercase font-mono text-stone-400">বর্তমান পাসওয়ার্ড</label>
+                  <input type="password" id="chg-pass-current" class="w-full bg-stone-950 border border-emerald-500/20 rounded-xl px-4 py-2.5 text-xs text-stone-200 focus:outline-none focus:border-emerald-500/40" />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] uppercase font-mono text-stone-400">নতুন পাসওয়ার্ড</label>
+                  <input type="password" id="chg-pass-new" class="w-full bg-stone-950 border border-emerald-500/20 rounded-xl px-4 py-2.5 text-xs text-stone-200 focus:outline-none focus:border-emerald-500/40" />
+                </div>
+                <div class="space-y-1.5">
+                  <label class="text-[10px] uppercase font-mono text-stone-400">নতুন পাসওয়ার্ড আবার</label>
+                  <input type="password" id="chg-pass-confirm" class="w-full bg-stone-950 border border-emerald-500/20 rounded-xl px-4 py-2.5 text-xs text-stone-200 focus:outline-none focus:border-emerald-500/40" />
+                </div>
+              </div>
+              <p id="chg-pass-msg" class="text-[10px] font-sans"></p>
+              <button type="button" onclick="changeAdminPassword()" class="px-5 py-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 border border-emerald-500/20 text-emerald-300 text-xs font-bold cursor-pointer flex items-center gap-1.5">
+                <i data-lucide="key" class="w-3.5 h-3.5"></i><span>পাসওয়ার্ড পরিবর্তন করুন</span>
+              </button>
+            </div>
+
             <!-- SAVE BUTTON -->
             <button onclick="saveSiteConfig()" class="w-full md:w-auto flex items-center justify-center gap-1.5 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-bold text-xs cursor-pointer shadow-lg mt-2 transition-all hover:scale-102">
               <i data-lucide="save" class="w-4 h-4"></i><span>সাইট তথ্য সংরক্ষণ করুন</span>
@@ -640,6 +688,17 @@
             <div id="adm-inbox-container" class="space-y-4 max-h-[500px] overflow-y-auto pr-1 scrollbar-thin"></div>
           </div>
 
+          <!-- SUBVIEW: FAQ Editor -->
+          <div id="adm-panel-faq" class="adm-panel hidden space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-white uppercase tracking-wider font-mono">FAQ প্রশ্নউত্তর ম্যানেজার</h3>
+              <button onclick="addFaqItem()" class="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-xs font-semibold text-emerald-300 cursor-pointer">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i><span>নতুন প্রশ্ন</span>
+              </button>
+            </div>
+            <div id="adm-faq-container" class="space-y-4 max-h-[500px] overflow-y-auto pr-1 scrollbar-thin"></div>
+          </div>
+
         </div>
       </div>
     </section>
@@ -681,17 +740,54 @@
     </div>
   </nav>
 
-  <!-- ================= TOAST NOTIFICATION ================= -->
+  <!-- ================= TOAST NOTIFICATION
+
+  <!-- ================= FLOATING FAQ / LIVE HELP BUTTON ================= -->
+  <button onclick="toggleFaqPanel()" id="faq-float-btn" class="fixed bottom-24 right-4 md:right-8 z-50 w-14 h-14 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 shadow-2xl shadow-emerald-500/30 flex items-center justify-center text-white hover:scale-110 active:scale-95 transition-all cursor-pointer animate-pulse-slow">
+    <i data-lucide="message-circle-question" class="w-6 h-6"></i>
+  </button>
+
+  <!-- ================= FAQ PANEL ================= -->
+  <div id="faq-panel" class="hidden fixed bottom-40 right-4 md:right-8 z-50 w-[92vw] max-w-sm max-h-[65vh] backdrop-blur-2xl bg-stone-950/95 border border-emerald-500/25 rounded-3xl shadow-2xl flex flex-col overflow-hidden">
+    <div class="flex items-center justify-between px-5 py-4 border-b border-emerald-500/15 bg-stone-900/50">
+      <div class="flex items-center gap-2">
+        <i data-lucide="help-circle" class="w-4 h-4 text-emerald-400"></i>
+        <h3 class="text-xs font-bold text-white uppercase tracking-wider font-mono" id="faq-panel-title">প্রশ্ন ও উত্তর</h3>
+      </div>
+      <button onclick="toggleFaqPanel()" class="text-stone-400 hover:text-white cursor-pointer"><i data-lucide="x" class="w-4 h-4"></i></button>
+    </div>
+    <div id="faq-panel-list" class="flex-1 overflow-y-auto p-4 space-y-2.5 scrollbar-thin"></div>
+  </div> ================= -->
   <div id="toast" class="hidden fixed bottom-24 left-1/2 -translate-x-1/2 backdrop-blur-2xl bg-stone-900/95 border border-emerald-400/30 text-stone-100 px-6 py-3.5 rounded-2xl shadow-xl text-xs font-semibold z-50 tracking-wide text-center max-w-[90vw]">
     টেলিগ্রাম মেসেজ বা প্রজেক্ট আপডেট সফল হয়েছে!
   </div>
 
-  <!-- ================= SCRIPTS & SEEDS LAYER ================= -->
+    <!-- ================= DETAIL MODAL (Blog / Portfolio / Store) ================= -->
+  <div id="detail-modal" class="hidden fixed inset-0 z-[70] flex items-center justify-center p-4 bg-stone-950/80 backdrop-blur-sm" onclick="if(event.target===this) closeDetailModal()">
+    <div class="w-full max-w-2xl max-h-[85vh] overflow-y-auto scrollbar-thin backdrop-blur-2xl bg-stone-950/95 border border-emerald-500/25 rounded-3xl shadow-2xl relative">
+      <button onclick="closeDetailModal()" class="absolute top-4 right-4 z-10 w-8 h-8 rounded-full bg-stone-900/80 border border-emerald-500/20 flex items-center justify-center text-stone-300 hover:text-white cursor-pointer">
+        <i data-lucide="x" class="w-4 h-4"></i>
+      </button>
+      <div id="detail-modal-image-wrap" class="w-full h-56 md:h-72 overflow-hidden">
+        <img id="detail-modal-image" src="" alt="" class="w-full h-full object-cover" />
+      </div>
+      <div class="p-6 md:p-8 space-y-4">
+        <span id="detail-modal-tag" class="text-[10px] uppercase tracking-wider font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/15 px-2.5 py-0.5 rounded-full w-fit inline-block"></span>
+        <h2 id="detail-modal-title" class="text-lg md:text-xl font-bold text-white leading-snug"></h2>
+        <p id="detail-modal-meta" class="text-[10px] text-stone-500 font-mono"></p>
+        <div id="detail-modal-desc" class="text-sm text-stone-300 leading-relaxed"></div>
+        <div id="detail-modal-action"></div>
+      </div>
+    </div>
+  </div>
+
+<!-- ================= SCRIPTS & SEEDS LAYER ================= -->
   <script>
     // 1. DEFAULT DATA CONFIGURATION
     const DEFAULT_CONFIG = {
       brandName: "SR Tech Lab",
       logoText: "SR",
+      logoImage: "",
       heroDesc: "আমরা তৈরি করি প্রফেশনাল এক্সেল VBA ড্যাশবোর্ড, কাস্টম ফুল-স্ট্যাক সফটওয়্যার এবং আকর্ষণীয় ও আধুনিক ইউজার এক্সপেরিয়েন্স। প্রযুক্তি ও প্রকৃতির এক অনন্য মিশেলে আপনার ডিজিটাল ভবিষ্যৎ গড়ে তুলুন।",
       aboutText: "এস আর টেক ল্যাব-এ আমরা ক্লাউড সল্যুশন, অ্যাডভান্সড ড্যাশবোর্ড অটোমেশন এবং রেডি-টু-ইউজ ডিজিটাল রিসোর্স নিয়ে কাজ করি। আমাদের মূল লক্ষ্য হলো জটিল ব্যবসায়িক প্রক্রিয়াগুলোকে সহজ ও সুন্দর টেকনোলজিতে রূপান্তর করা, যেন আপনি প্রকৃতির শান্ত পরিবেশে বসেই আপনার কাজ নিখুঁতভাবে পরিচালনা করতে পারেন।",
       skills: ["Excel VBA Automation", "Full Stack Development", "React & Node.js", "Tailwind CSS", "Data Analytics"],
@@ -778,6 +874,12 @@
       { id: "video-2", title: "অ্যাডভান্সড ড্যাশবোর্ড সিক্রেট কালারিং গাইড", url: "https://youtu.be/F_H2Y45zE_k" }
     ];
 
+    const INITIAL_FAQS = [
+      { id: "faq-1", q: "আপনারা কি ধরনের সার্ভিস প্রদান করেন?", a: "আমরা এক্সেল VBA অটোমেশন, ফুল-স্ট্যাক ওয়েব ডেভেলপমেন্ট, এবং কাস্টম ডিজিটাল ড্যাশবোর্ড সলুশন তৈরি করি।" },
+      { id: "faq-2", q: "কাজ শেষ করতে কতদিন সময় লাগে?", a: "প্রজেক্টের জটিলতা অনুযায়ী সময় লাগে, সাধারণত ৫-০১ কর্মদিবসের মধ্যে ডেলিভারি দেওয়া হয়।" },
+      { id: "faq-3", q: "পেয়মেন্ট কিভাবে করব।", a: "বিকাশ, রকেট, এবং সরাসরি ব্যাংক ডিপোজিট সহ বিভিন্ন মাধ্যমে পেয়মেন্ট গ্রহণ করা হয়। যোগাযোগ পাতায় বিস্তারিত জানানো হবে।" }
+    ];
+
     // BILINGUAL RESOURCE TRANSLATIONS
     const translations = {
       bn: {
@@ -855,6 +957,8 @@
     let storeItems = JSON.parse(localStorage.getItem("sr_store_html")) || [...INITIAL_STORE];
     let videos = JSON.parse(localStorage.getItem("sr_videos_html")) || [...INITIAL_VIDEOS];
     let messages = JSON.parse(localStorage.getItem("sr_messages_html")) || [];
+    let faqs = JSON.parse(localStorage.getItem("sr_faqs_html")) || [...INITIAL_FAQS];
+    let adminPassword = localStorage.getItem("sr_admin_password_html") || "admin123";
 
     // Form attachment base64 preview temporary state
     let inqImgBase64 = null;
@@ -931,6 +1035,41 @@
       toggleCornerMenu();
     }
 
+    function toggleFaqPanel() {
+      const panel = document.getElementById("faq-panel");
+      panel.classList.toggle("hidden");
+      if (!panel.classList.contains("hidden")) {
+        renderFaqPanel();
+        lucide.createIcons();
+      }
+    }
+
+    function renderFaqPanel() {
+      const list = document.getElementById("faq-panel-list");
+      if (!faqs || faqs.length === 0) {
+        list.innerHTML = `<div class="py-10 text-center text-stone-400 text-xs">${currentLang === "bn" ? "এখনো কোনো প্রশ্ন যোগ করা হয়নি।" : "No FAQs added yet."}</div>`;
+        return;
+      }
+      list.innerHTML = faqs.map((f, idx) => `
+        <div class="rounded-xl bg-stone-900/50 border border-emerald-500/10 overflow-hidden">
+          <button onclick="toggleFaqAnswer(${idx})" class="w-full flex items-center justify-between gap-2 px-4 py-3 text-left cursor-pointer">
+            <span class="text-xs font-semibold text-stone-200">${f.q}</span>
+            <i data-lucide="chevron-down" class="w-4 h-4 text-emerald-400 shrink-0 transition-transform" id="faq-chevron-${idx}"></i>
+          </button>
+          <div id="faq-answer-${idx}" class="hidden px-4 pb-3.5 text-xs text-stone-400 leading-relaxed">${f.a}</div>
+        </div>
+      `).join("");
+      lucide.createIcons();
+    }
+
+    function toggleFaqAnswer(idx) {
+      const ans = document.getElementById(`faq-answer-${idx}`);
+      const chevron = document.getElementById(`faq-chevron-${idx}`);
+      if (!ans) return;
+      ans.classList.toggle("hidden");
+      if (chevron) chevron.style.transform = ans.classList.contains("hidden") ? "rotate(0deg)" : "rotate(180deg)";
+    }
+
     function showToast(text) {
       const toast = document.getElementById("toast");
       toast.textContent = text;
@@ -946,6 +1085,14 @@
       
       // Header branding setup
       document.getElementById("logo-text").textContent = siteConfig.logoText;
+      const logoBox = document.getElementById("logo-box");
+      if (logoBox) {
+        if (siteConfig.logoImage) {
+          logoBox.innerHTML = `<img src="${siteConfig.logoImage}" alt="logo" class="w-full h-full object-cover rounded-xl" />`;
+        } else {
+          logoBox.innerHTML = `<span id="logo-text" class="text-sm tracking-wider font-mono">${siteConfig.logoText}</span>`;
+        }
+      }
       document.getElementById("brand-title").innerHTML = `${siteConfig.brandName} <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400 animate-pulse"></i>`;
       document.getElementById("brand-sub").textContent = t.brandSub;
 
@@ -1003,6 +1150,8 @@
       // Render tags lists
       renderBlogChips();
       renderPortfolioChips();
+      document.getElementById("faq-panel-title").textContent = currentLang === "bn" ? "প্রশ্ন ও উত্তর" : "FAQ & Help";
+
       renderStoreChips();
 
       // Re-trigger icon updates
@@ -1055,6 +1204,71 @@
       }
     }
 
+    // GENERIC DETAIL MODAL (Blog / Portfolio / Store)
+    function openDetailModal(opts) {
+      document.getElementById("detail-modal-image").src = opts.image || "";
+      document.getElementById("detail-modal-tag").textContent = opts.tag || "";
+      document.getElementById("detail-modal-title").textContent = opts.title || "";
+      document.getElementById("detail-modal-meta").textContent = opts.meta || "";
+      document.getElementById("detail-modal-desc").innerHTML = opts.desc || "";
+      document.getElementById("detail-modal-action").innerHTML = opts.actionHtml || "";
+      document.getElementById("detail-modal").classList.remove("hidden");
+      document.body.style.overflow = "hidden";
+      lucide.createIcons();
+    }
+
+    function closeDetailModal() {
+      document.getElementById("detail-modal").classList.add("hidden");
+      document.body.style.overflow = "";
+    }
+
+    function openBlogDetail(id) {
+      const b = blogs.find(x => x.id === id);
+      if (!b) return;
+      openDetailModal({
+        image: b.image, tag: b.tag, title: b.title, meta: b.date, desc: b.desc, actionHtml: ""
+      });
+    }
+
+    function openPortfolioDetail(id) {
+      const p = portfolio.find(x => x.id === id);
+      if (!p) return;
+      const visitLabel = currentLang === "bn" ? "লাইভ প্রজেক্ট দেখুন" : "Visit Live Project";
+      openDetailModal({
+        image: p.image, tag: p.cat, title: p.title, meta: "",
+        desc: `<p>${p.desc || p.subSummary}</p>`,
+        actionHtml: p.link ? `<a href="${p.link}" target="_blank" rel="noopener" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold cursor-pointer"><i data-lucide="external-link" class="w-4 h-4"></i>${visitLabel}</a>` : ""
+      });
+    }
+
+    function openStoreDetail(id) {
+      const s = storeItems.find(x => x.id === id);
+      if (!s) return;
+      const orderLabel = currentLang === "bn" ? "অর্ডার করুন" : "Order Now";
+      const safeName = s.name.replace(/'/g, "\\'");
+      openDetailModal({
+        image: s.image, tag: s.cat, title: s.name, meta: s.price,
+        desc: `<p>${s.desc || s.subSummary}</p>`,
+        actionHtml: `<button onclick="closeDetailModal(); triggerStoreInquiry('${safeName}', '${s.price}')" class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold cursor-pointer"><i data-lucide="shopping-cart" class="w-4 h-4"></i>${orderLabel}</button>`
+      });
+    }
+
+    function saveBlogItem(id) {
+      localStorage.setItem("sr_blogs_html", JSON.stringify(blogs));
+      renderBlogs();
+      showToast(currentLang === "bn" ? "ব্লগ পোস্ট সংরক্ষণ হয়েছে! ✅" : "Blog post saved! ✅");
+    }
+    function savePortfolioItem(id) {
+      localStorage.setItem("sr_portfolio_html", JSON.stringify(portfolio));
+      renderPortfolio();
+      showToast(currentLang === "bn" ? "প্রজেক্ট সংরক্ষণ হয়েছে! ✅" : "Project saved! ✅");
+    }
+    function saveStoreItem(id) {
+      localStorage.setItem("sr_store_html", JSON.stringify(storeItems));
+      renderStore();
+      showToast(currentLang === "bn" ? "প্রোডাক্ট সংরক্ষণ হয়েছে! ✅" : "Product saved! ✅");
+    }
+
     // 7. BLOG MODULE
     let activeBlogTag = "All";
     function renderBlogChips() {
@@ -1094,7 +1308,7 @@
       }
 
       grid.innerHTML = filtered.map(b => `
-        <div class="group backdrop-blur-md bg-stone-950/40 hover:bg-stone-900/50 border border-emerald-500/15 hover:border-emerald-500/35 rounded-2xl overflow-hidden transition-all duration-300 shadow-md">
+        <div class="group backdrop-blur-md bg-stone-950/40 hover:bg-stone-900/50 border border-emerald-500/15 hover:border-emerald-500/35 rounded-2xl overflow-hidden transition-all duration-300 shadow-md cursor-pointer" onclick="openBlogDetail('${b.id}')">
           <div class="w-full h-44 overflow-hidden relative border-b border-emerald-500/10">
             <img src="${b.image}" alt="${b.title}" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-stone-950/60 to-transparent"></div>
@@ -1159,7 +1373,7 @@
       }
 
       grid.innerHTML = filtered.map(p => `
-        <div class="group backdrop-blur-md bg-stone-950/40 hover:bg-stone-900/50 border border-emerald-500/15 hover:border-emerald-500/35 rounded-2xl overflow-hidden transition-all duration-300 shadow-md">
+        <div class="group backdrop-blur-md bg-stone-950/40 hover:bg-stone-900/50 border border-emerald-500/15 hover:border-emerald-500/35 rounded-2xl overflow-hidden transition-all duration-300 shadow-md cursor-pointer" onclick="openPortfolioDetail('${p.id}')">
           <div class="w-full h-40 overflow-hidden relative border-b border-emerald-500/10">
             <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-stone-950/50 to-transparent"></div>
@@ -1221,7 +1435,7 @@
       }
 
       grid.innerHTML = filtered.map(s => `
-        <div class="group backdrop-blur-md bg-stone-950/40 hover:bg-stone-900/50 border border-emerald-500/15 hover:border-emerald-500/35 rounded-2xl overflow-hidden transition-all duration-300 shadow-md">
+        <div class="group backdrop-blur-md bg-stone-950/40 hover:bg-stone-900/50 border border-emerald-500/15 hover:border-emerald-500/35 rounded-2xl overflow-hidden transition-all duration-300 shadow-md cursor-pointer" onclick="openStoreDetail('${s.id}')">
           <div class="w-full h-40 overflow-hidden relative border-b border-emerald-500/10">
             <img src="${s.image}" alt="${s.name}" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-stone-950/50 to-transparent"></div>
@@ -1233,7 +1447,7 @@
             <p class="text-xs text-stone-400 line-clamp-2">${s.subSummary}</p>
             <div class="mt-2 pt-3 border-t border-emerald-500/10 flex items-center justify-between text-xs text-emerald-400 font-semibold">
               <span class="flex items-center gap-1"><i data-lucide="info" class="w-3.5 h-3.5"></i>${currentLang === "bn" ? "বিস্তারিত ও অর্ডার" : "Details & Order"}</span>
-              <button onclick="triggerStoreInquiry('${s.name}', '${s.price}')" class="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/25 cursor-pointer"><i data-lucide="shopping-cart" class="w-4 h-4 text-emerald-400"></i></button>
+              <button onclick="event.stopPropagation(); triggerStoreInquiry('${s.name}', '${s.price}')" class="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/25 cursor-pointer"><i data-lucide="shopping-cart" class="w-4 h-4 text-emerald-400"></i></button>
             </div>
           </div>
         </div>
@@ -1459,6 +1673,45 @@
       showToast(currentLang === "bn" ? "আপনার বার্তা সফলভাবে অ্যাডমিন প্যানেলে পাঠানো হয়েছে! ✅" : "Message sent successfully to Admin inbox! ✅");
     }
 
+    // ADMIN: FAQ manager
+    function renderAdminFaq() {
+      const container = document.getElementById("adm-faq-container");
+      container.innerHTML = faqs.map(f => `
+        <div class="p-4 rounded-2xl bg-stone-900/50 border border-emerald-500/10 space-y-3">
+          <input type="text" onchange="updateFaqField('${f.id}', 'q', this.value)" value="${f.q}" placeholder="প্রশ্ন" class="w-full bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200 font-semibold" />
+          <textarea onchange="updateFaqField('${f.id}', 'a', this.value)" rows="2" placeholder="উত্তর" class="w-full bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200">${f.a}</textarea>
+          <div class="flex justify-end gap-2">
+            <button onclick="saveFaqItem('${f.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/20 cursor-pointer text-[10px] font-bold flex items-center gap-1"><i data-lucide="save" class="w-3.5 h-3.5"></i>সংরক্ষণ</button>
+            <button onclick="deleteFaqItem('${f.id}')" class="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+          </div>
+        </div>
+      `).join("");
+      lucide.createIcons();
+    }
+
+    function addFaqItem() {
+      const newItem = { id: `faq-${Date.now()}`, q: "নতুন প্রশ্ন লিখুন...", a: "উত্তর লিখুন..." };
+      faqs.unshift(newItem);
+      localStorage.setItem("sr_faqs_html", JSON.stringify(faqs));
+      renderAdminFaq();
+    }
+
+    function updateFaqField(id, field, value) {
+      faqs = faqs.map(f => f.id === id ? { ...f, [field]: value } : f);
+      localStorage.setItem("sr_faqs_html", JSON.stringify(faqs));
+    }
+
+    function saveFaqItem(id) {
+      localStorage.setItem("sr_faqs_html", JSON.stringify(faqs));
+      showToast(currentLang === "bn" ? "FAQ সংরক্ষণ হয়েছে! ✅" : "FAQ saved! ✅");
+    }
+
+    function deleteFaqItem(id) {
+      faqs = faqs.filter(f => f.id !== id);
+      localStorage.setItem("sr_faqs_html", JSON.stringify(faqs));
+      renderAdminFaq();
+    }
+
     // 13. INTUITIVE ADMIN CONTROLLERS & SECURE MODIFICATIONS
     let currentAdminTab = "site";
 
@@ -1467,7 +1720,7 @@
       const pass = document.getElementById("admin-pass").value;
       const err = document.getElementById("admin-auth-err");
 
-      if (pass === "admin123" || pass === "admin" || !pass) {
+      if (pass === adminPassword) {
         err.classList.add("hidden");
         document.getElementById("admin-auth").classList.add("hidden");
         document.getElementById("admin-workspace").classList.remove("hidden");
@@ -1506,6 +1759,7 @@
       if (tabId === "store") renderAdminStore();
       if (tabId === "videos") renderAdminVideos();
       if (tabId === "inbox") renderAdminInbox();
+      if (tabId === "faq") renderAdminFaq();
     }
 
     function loadAdminForm() {
@@ -1530,6 +1784,9 @@
       document.getElementById("edit-social-youtube").value = youtube;
       document.getElementById("edit-social-linkedin").value = linkedin;
       document.getElementById("edit-social-github").value = github;
+
+      // Sync logo preview
+      updateLogoPreview();
 
       // Render Timeline sub-editor
       renderAdminTimeline();
@@ -1569,6 +1826,90 @@
       if (!siteConfig.timeline) siteConfig.timeline = [];
       siteConfig.timeline.splice(index, 1);
       renderAdminTimeline();
+    }
+
+    function handleLogoUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          const maxDim = 300;
+          let w = img.width, h = img.height;
+          if (w > maxDim || h > maxDim) {
+            if (w > h) { h = Math.round((h * maxDim) / w); w = maxDim; }
+            else { w = Math.round((w * maxDim) / h); h = maxDim; }
+          }
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL("image/png", 0.85);
+          siteConfig.logoImage = dataUrl;
+          localStorage.setItem("sr_site_config_html", JSON.stringify(siteConfig));
+          updateLogoPreview();
+          renderBilingual();
+          showToast(currentLang === "bn" ? "লোগো সফলভাবে আপডেট হয়েছে! ✅" : "Logo updated successfully! ✅");
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeLogoImage() {
+      siteConfig.logoImage = "";
+      localStorage.setItem("sr_site_config_html", JSON.stringify(siteConfig));
+      document.getElementById("logo-file-input").value = "";
+      updateLogoPreview();
+      renderBilingual();
+      showToast(currentLang === "bn" ? "লোগো মুছে ফেলা হয়েছে!" : "Logo removed!");
+    }
+
+    function updateLogoPreview() {
+      const img = document.getElementById("logo-preview-img");
+      const icon = document.getElementById("logo-preview-icon");
+      if (!img) return;
+      if (siteConfig.logoImage) {
+        img.src = siteConfig.logoImage;
+        img.classList.remove("hidden");
+        if (icon) icon.classList.add("hidden");
+      } else {
+        img.classList.add("hidden");
+        if (icon) icon.classList.remove("hidden");
+      }
+    }
+
+    function changeAdminPassword() {
+      const cur = document.getElementById("chg-pass-current").value;
+      const next = document.getElementById("chg-pass-new").value;
+      const confirmVal = document.getElementById("chg-pass-confirm").value;
+      const msgEl = document.getElementById("chg-pass-msg");
+
+      if (cur !== adminPassword) {
+        msgEl.textContent = currentLang === "bn" ? "বর্তমান পাসওয়ার্ড ভুল!" : "Current password is incorrect!";
+        msgEl.className = "text-[10px] text-red-400 font-sans";
+        return;
+      }
+      if (!next || next.length < 4) {
+        msgEl.textContent = currentLang === "bn" ? "নতুন পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে!" : "New password must be at least 4 characters!";
+        msgEl.className = "text-[10px] text-red-400 font-sans";
+        return;
+      }
+      if (next !== confirmVal) {
+        msgEl.textContent = currentLang === "bn" ? "নতুন পাসওয়ার্ড মিলছে না!" : "New passwords do not match!";
+        msgEl.className = "text-[10px] text-red-400 font-sans";
+        return;
+      }
+
+      adminPassword = next;
+      localStorage.setItem("sr_admin_password_html", adminPassword);
+      msgEl.textContent = currentLang === "bn" ? "পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে! ✅" : "Password changed successfully! ✅";
+      msgEl.className = "text-[10px] text-emerald-400 font-sans";
+      document.getElementById("chg-pass-current").value = "";
+      document.getElementById("chg-pass-new").value = "";
+      document.getElementById("chg-pass-confirm").value = "";
+      showToast(currentLang === "bn" ? "অ্যাডমিন পাসওয়ার্ড আপডেট হয়েছে! ✅" : "Admin password updated! ✅");
     }
 
     function saveSiteConfig() {
@@ -1616,6 +1957,7 @@
           <textarea onchange="updateBlogField('${b.id}', 'desc', this.value)" rows="3" placeholder="Full body HTML Description" class="w-full bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200 font-mono">${b.desc}</textarea>
           <div class="flex justify-between items-center">
             <input type="text" onchange="updateBlogField('${b.id}', 'image', this.value)" value="${b.image}" placeholder="Thumbnail image URL" class="w-2/3 bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200" />
+            <button onclick="saveBlogItem('${b.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/20 cursor-pointer text-[10px] font-bold flex items-center gap-1 mr-2"><i data-lucide="save" class="w-3.5 h-3.5"></i>সংরক্ষণ</button>
             <button onclick="deleteBlogItem('${b.id}')" class="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
           </div>
         </div>
@@ -1665,6 +2007,7 @@
           <input type="text" onchange="updatePortfolioField('${p.id}', 'subSummary', this.value)" value="${p.subSummary}" placeholder="Short Description" class="w-full bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200" />
           <div class="flex justify-between items-center">
             <input type="text" onchange="updatePortfolioField('${p.id}', 'image', this.value)" value="${p.image}" placeholder="Project cover Image URL" class="w-2/3 bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200" />
+            <button onclick="savePortfolioItem('${p.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/20 cursor-pointer text-[10px] font-bold flex items-center gap-1 mr-2"><i data-lucide="save" class="w-3.5 h-3.5"></i>সংরক্ষণ</button>
             <button onclick="deletePortfolioItem('${p.id}')" class="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
           </div>
         </div>
@@ -1714,6 +2057,7 @@
           <input type="text" onchange="updateStoreField('${item.id}', 'subSummary', this.value)" value="${item.subSummary}" placeholder="Short Specifications Summary" class="w-full bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200" />
           <div class="flex justify-between items-center">
             <input type="text" onchange="updateStoreField('${item.id}', 'image', this.value)" value="${item.image}" placeholder="Product cover Image URL" class="w-2/3 bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200" />
+            <button onclick="saveStoreItem('${item.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/20 cursor-pointer text-[10px] font-bold flex items-center gap-1 mr-2"><i data-lucide="save" class="w-3.5 h-3.5"></i>সংরক্ষণ</button>
             <button onclick="deleteStoreItem('${item.id}')" class="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
           </div>
         </div>
