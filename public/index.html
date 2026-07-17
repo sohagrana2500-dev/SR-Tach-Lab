@@ -125,7 +125,7 @@
       box-shadow: 0 30px 60px -12px rgba(16, 185, 129, 0.35);
     }
   </style>
-<script src="/_aistudio-iframe.js?v=1ee22f18"></script></head>
+</head>
 <body class="bg-stone-950 text-stone-100 min-h-screen flex flex-col relative font-sans overflow-x-hidden pb-32">
 
   <!-- ================= BACKGROUND LAYER ================= -->
@@ -436,11 +436,12 @@
       <div id="admin-auth" class="max-w-md mx-auto backdrop-blur-xl bg-stone-950/60 border border-emerald-500/20 p-8 rounded-3xl text-center shadow-2xl">
         <i data-lucide="settings" class="w-12 h-12 text-emerald-400 mx-auto mb-4 animate-spin-slow"></i>
         <h2 class="text-xl font-bold text-white tracking-wide" id="adm-auth-title">অ্যাডমিন প্রবেশদ্বার</h2>
-        <p class="text-xs text-stone-400 mt-1 mb-6" id="adm-auth-sub">ডেমো পাসওয়ার্ড: admin</p>
+        <p class="text-xs text-stone-400 mt-1 mb-6" id="adm-auth-sub">Firebase Authentication দিয়ে লগইন করুন</p>
 
         <form onsubmit="tryAdminLogin(event)" class="space-y-4">
-          <input type="password" id="admin-pass" placeholder="মাস্টার পাসওয়ার্ড লিখুন" class="w-full bg-stone-900 border border-emerald-500/20 rounded-xl px-4 py-3 text-xs text-stone-200 focus:outline-none focus:border-emerald-500/50 text-center" />
-          <p id="admin-auth-err" class="hidden text-xs text-red-400 font-sans">ভুল পাসওয়ার্ড! আবার চেষ্টা করুন।</p>
+          <input type="email" id="admin-email" placeholder="এডমিন ইমেইল" class="w-full bg-stone-900 border border-emerald-500/20 rounded-xl px-4 py-3 text-xs text-stone-200 focus:outline-none focus:border-emerald-500/50 text-center" />
+          <input type="password" id="admin-pass" placeholder="পাসওয়ার্ড লিখুন" class="w-full bg-stone-900 border border-emerald-500/20 rounded-xl px-4 py-3 text-xs text-stone-200 focus:outline-none focus:border-emerald-500/50 text-center" />
+          <p id="admin-auth-err" class="hidden text-xs text-red-400 font-sans">ইমেইল বা পাসওয়ার্ড ভুল! আবার চেষ্টা করুন।</p>
           <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold cursor-pointer">লগইন করুন</button>
         </form>
       </div>
@@ -799,8 +800,28 @@
     </div>
   </div>
 
+<!-- ================= Firebase SDK ================= -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
 <!-- ================= SCRIPTS & SEEDS LAYER ================= -->
   <script>
+    // ══ Firebase কনফিগারেশন ══
+    const firebaseConfig = {
+      apiKey: "AIzaSyCVSOo7DDAYSqZA7Jsz8lfPTSu4ABZmWjY",
+      authDomain: "sr-tach-lab-ade2e.firebaseapp.com",
+      projectId: "sr-tach-lab-ade2e",
+      storageBucket: "sr-tach-lab-ade2e.firebasestorage.app",
+      messagingSenderId: "985831670483",
+      appId: "1:985831670483:web:b77227940268d15ec3ca26",
+      measurementId: "G-S2PRF2RMCN"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const SITE_DOC = db.collection("site").doc("main");
+
     // 1. DEFAULT DATA CONFIGURATION
     const DEFAULT_CONFIG = {
       brandName: "SR Tech Lab",
@@ -967,26 +988,59 @@
     // 2. RUNTIME STATE STORAGE
     let currentView = "home";
     let currentLang = localStorage.getItem("sr_lang_html") || "bn";
-    let siteConfig = JSON.parse(localStorage.getItem("sr_site_config_html")) || { ...DEFAULT_CONFIG };
-    let blogs = JSON.parse(localStorage.getItem("sr_blogs_html")) || [...INITIAL_BLOGS];
-    let portfolio = JSON.parse(localStorage.getItem("sr_portfolio_html")) || [...INITIAL_PORTFOLIO];
-    let storeItems = JSON.parse(localStorage.getItem("sr_store_html")) || [...INITIAL_STORE];
-    let videos = JSON.parse(localStorage.getItem("sr_videos_html")) || [...INITIAL_VIDEOS];
-    let messages = JSON.parse(localStorage.getItem("sr_messages_html")) || [];
-    let faqs = JSON.parse(localStorage.getItem("sr_faqs_html")) || [...INITIAL_FAQS];
-    let adminPassword = localStorage.getItem("sr_admin_password_html") || "admin123";
+    let siteConfig = { ...DEFAULT_CONFIG };
+    let blogs = [...INITIAL_BLOGS];
+    let portfolio = [...INITIAL_PORTFOLIO];
+    let storeItems = [...INITIAL_STORE];
+    let videos = [...INITIAL_VIDEOS];
+    let messages = [];
+    let faqs = [...INITIAL_FAQS];
+
+    // Firestore থেকে সাইটের কনটেন্ট (মেসেজ ব্যতীত) লোড করে
+    async function loadCloudData(){
+      try{
+        const snap = await SITE_DOC.get();
+        if(snap.exists){
+          const d = snap.data();
+          siteConfig = Object.assign({...DEFAULT_CONFIG}, d.siteConfig || {});
+          blogs = d.blogs || [...INITIAL_BLOGS];
+          portfolio = d.portfolio || [...INITIAL_PORTFOLIO];
+          storeItems = d.storeItems || [...INITIAL_STORE];
+          videos = d.videos || [...INITIAL_VIDEOS];
+          faqs = d.faqs || [...INITIAL_FAQS];
+        }else{
+          await saveCloudData();
+        }
+      }catch(e){
+        console.error(e);
+        showToast(currentLang === "bn" ? "ডেটা লোড করতে সমস্যা হয়েছে" : "Failed to load data");
+      }
+    }
+
+    // siteConfig/blogs/portfolio/storeItems/videos/faqs Firestore-এ সংরক্ষণ করে
+    async function saveCloudData(){
+      try{
+        await SITE_DOC.set({ siteConfig, blogs, portfolio, storeItems, videos, faqs });
+      }catch(e){
+        console.error(e);
+        showToast(currentLang === "bn" ? "সংরক্ষণ ব্যর্থ হয়েছে — লগইন আছেন কিনা দেখুন" : "Save failed — check if you're logged in");
+      }
+    }
 
     // Form attachment base64 preview temporary state
     let inqImgBase64 = null;
 
     // Initialize UI on load
-    window.addEventListener("DOMContentLoaded", () => {
+    window.addEventListener("DOMContentLoaded", async () => {
       generateLeaves();
       updateClock();
       setInterval(updateClock, 1000);
       
       // Initialize icons
       lucide.createIcons();
+
+      // Firestore থেকে সাইটের কনটেন্ট লোড করা
+      await loadCloudData();
 
       // Load correct states
       renderBilingual();
@@ -1368,17 +1422,17 @@
     }
 
     function saveBlogItem(id) {
-      localStorage.setItem("sr_blogs_html", JSON.stringify(blogs));
+      saveCloudData();
       renderBlogs();
       showToast(currentLang === "bn" ? "ব্লগ পোস্ট সংরক্ষণ হয়েছে! ✅" : "Blog post saved! ✅");
     }
     function savePortfolioItem(id) {
-      localStorage.setItem("sr_portfolio_html", JSON.stringify(portfolio));
+      saveCloudData();
       renderPortfolio();
       showToast(currentLang === "bn" ? "প্রজেক্ট সংরক্ষণ হয়েছে! ✅" : "Project saved! ✅");
     }
     function saveStoreItem(id) {
-      localStorage.setItem("sr_store_html", JSON.stringify(storeItems));
+      saveCloudData();
       renderStore();
       showToast(currentLang === "bn" ? "প্রোডাক্ট সংরক্ষণ হয়েছে! ✅" : "Product saved! ✅");
     }
@@ -1754,7 +1808,7 @@
       document.getElementById("inq-img-preview-box").classList.add("hidden");
     }
 
-    function submitInquiry(event) {
+    async function submitInquiry(event) {
       event.preventDefault();
       const name = document.getElementById("inq-name").value.trim();
       const email = document.getElementById("inq-email").value.trim();
@@ -1774,8 +1828,13 @@
         read: false
       };
 
-      messages.unshift(newMsg);
-      localStorage.setItem("sr_messages_html", JSON.stringify(messages));
+      try{
+        await db.collection("messages").doc(newMsg.id).set(newMsg);
+      }catch(e){
+        console.error(e);
+        showToast(currentLang === "bn" ? "বার্তা পাঠাতে সমস্যা হয়েছে" : "Failed to send message");
+        return;
+      }
 
       // Reset
       document.getElementById("inq-name").value = "";
@@ -1784,7 +1843,7 @@
       document.getElementById("inq-msg").value = "";
       clearInqImage();
 
-      showToast(currentLang === "bn" ? "আপনার বার্তা সফলভাবে অ্যাডমিন প্যানেলে পাঠানো হয়েছে! ✅" : "Message sent successfully to Admin inbox! ✅");
+      showToast(currentLang === "bn" ? "আপনার বার্তা সফলভাবে অ্যাডমিন প্যানেলে পাঠানো হয়েছে! ✅" : "Message sent successfully to Admin inbox! ✅");
     }
 
     // ADMIN: FAQ manager
@@ -1806,47 +1865,57 @@
     function addFaqItem() {
       const newItem = { id: `faq-${Date.now()}`, q: "নতুন প্রশ্ন লিখুন...", a: "উত্তর লিখুন..." };
       faqs.unshift(newItem);
-      localStorage.setItem("sr_faqs_html", JSON.stringify(faqs));
+      saveCloudData();
       renderAdminFaq();
     }
 
     function updateFaqField(id, field, value) {
       faqs = faqs.map(f => f.id === id ? { ...f, [field]: value } : f);
-      localStorage.setItem("sr_faqs_html", JSON.stringify(faqs));
+      saveCloudData();
     }
 
     function saveFaqItem(id) {
-      localStorage.setItem("sr_faqs_html", JSON.stringify(faqs));
+      saveCloudData();
       showToast(currentLang === "bn" ? "FAQ সংরক্ষণ হয়েছে! ✅" : "FAQ saved! ✅");
     }
 
     function deleteFaqItem(id) {
       faqs = faqs.filter(f => f.id !== id);
-      localStorage.setItem("sr_faqs_html", JSON.stringify(faqs));
+      saveCloudData();
       renderAdminFaq();
     }
 
     // 13. INTUITIVE ADMIN CONTROLLERS & SECURE MODIFICATIONS
     let currentAdminTab = "site";
 
-    function tryAdminLogin(event) {
+    async function tryAdminLogin(event) {
       event.preventDefault();
+      const email = document.getElementById("admin-email").value.trim();
       const pass = document.getElementById("admin-pass").value;
       const err = document.getElementById("admin-auth-err");
 
-      if (pass === adminPassword) {
+      try {
+        await auth.signInWithEmailAndPassword(email, pass);
         err.classList.add("hidden");
         document.getElementById("admin-auth").classList.add("hidden");
         document.getElementById("admin-workspace").classList.remove("hidden");
-        
+
         // Load configurations into input forms
         loadAdminForm();
-      } else {
+      } catch (e) {
         err.classList.remove("hidden");
       }
     }
 
+    // Firebase Auth-এর লগইন অবস্থা ট্র্যাক করে
+    let adminLoggedIn = false;
+    auth.onAuthStateChanged((user) => {
+      adminLoggedIn = !!user;
+    });
+
     function logoutAdmin() {
+      auth.signOut();
+      document.getElementById("admin-email").value = "";
       document.getElementById("admin-pass").value = "";
       document.getElementById("admin-workspace").classList.add("hidden");
       document.getElementById("admin-auth").classList.remove("hidden");
@@ -1961,7 +2030,7 @@
           ctx.drawImage(img, 0, 0, w, h);
           const dataUrl = canvas.toDataURL("image/png", 0.85);
           siteConfig.logoImage = dataUrl;
-          localStorage.setItem("sr_site_config_html", JSON.stringify(siteConfig));
+          saveCloudData();
           updateLogoPreview();
           renderBilingual();
           showToast(currentLang === "bn" ? "লোগো সফলভাবে আপডেট হয়েছে! ✅" : "Logo updated successfully! ✅");
@@ -1973,7 +2042,7 @@
 
     function removeLogoImage() {
       siteConfig.logoImage = "";
-      localStorage.setItem("sr_site_config_html", JSON.stringify(siteConfig));
+      saveCloudData();
       document.getElementById("logo-file-input").value = "";
       updateLogoPreview();
       renderBilingual();
@@ -1994,36 +2063,44 @@
       }
     }
 
-    function changeAdminPassword() {
+    async function changeAdminPassword() {
       const cur = document.getElementById("chg-pass-current").value;
       const next = document.getElementById("chg-pass-new").value;
       const confirmVal = document.getElementById("chg-pass-confirm").value;
       const msgEl = document.getElementById("chg-pass-msg");
+      const user = auth.currentUser;
 
-      if (cur !== adminPassword) {
-        msgEl.textContent = currentLang === "bn" ? "বর্তমান পাসওয়ার্ড ভুল!" : "Current password is incorrect!";
+      if (!user) {
+        msgEl.textContent = currentLang === "bn" ? "আগে লগইন করুন!" : "Please log in first!";
         msgEl.className = "text-[10px] text-red-400 font-sans";
         return;
       }
-      if (!next || next.length < 4) {
-        msgEl.textContent = currentLang === "bn" ? "নতুন পাসওয়ার্ড কমপক্ষে ৪ অক্ষরের হতে হবে!" : "New password must be at least 4 characters!";
+      if (!next || next.length < 6) {
+        msgEl.textContent = currentLang === "bn" ? "নতুন পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে!" : "New password must be at least 6 characters!";
         msgEl.className = "text-[10px] text-red-400 font-sans";
         return;
       }
       if (next !== confirmVal) {
-        msgEl.textContent = currentLang === "bn" ? "নতুন পাসওয়ার্ড মিলছে না!" : "New passwords do not match!";
+        msgEl.textContent = currentLang === "bn" ? "নতুন পাসওয়ার্ড মিলছে না!" : "New passwords do not match!";
         msgEl.className = "text-[10px] text-red-400 font-sans";
         return;
       }
 
-      adminPassword = next;
-      localStorage.setItem("sr_admin_password_html", adminPassword);
-      msgEl.textContent = currentLang === "bn" ? "পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে! ✅" : "Password changed successfully! ✅";
-      msgEl.className = "text-[10px] text-emerald-400 font-sans";
-      document.getElementById("chg-pass-current").value = "";
-      document.getElementById("chg-pass-new").value = "";
-      document.getElementById("chg-pass-confirm").value = "";
-      showToast(currentLang === "bn" ? "অ্যাডমিন পাসওয়ার্ড আপডেট হয়েছে! ✅" : "Admin password updated! ✅");
+      try {
+        const cred = firebase.auth.EmailAuthProvider.credential(user.email, cur);
+        await user.reauthenticateWithCredential(cred);
+        await user.updatePassword(next);
+        msgEl.textContent = currentLang === "bn" ? "পাসওয়ার্ড সফলভাবে পরিবর্তন হয়েছে! ✅" : "Password changed successfully! ✅";
+        msgEl.className = "text-[10px] text-emerald-400 font-sans";
+        document.getElementById("chg-pass-current").value = "";
+        document.getElementById("chg-pass-new").value = "";
+        document.getElementById("chg-pass-confirm").value = "";
+        showToast(currentLang === "bn" ? "অ্যাডমিন পাসওয়ার্ড আপডেট হয়েছে! ✅" : "Admin password updated! ✅");
+      } catch (e) {
+        console.error(e);
+        msgEl.textContent = currentLang === "bn" ? "বর্তমান পাসওয়ার্ড ভুল অথবা সমস্যা হয়েছে!" : "Current password incorrect or an error occurred!";
+        msgEl.className = "text-[10px] text-red-400 font-sans";
+      }
     }
 
     function saveSiteConfig() {
@@ -2051,7 +2128,7 @@
         { label: "GitHub", url: ghUrl }
       ];
 
-      localStorage.setItem("sr_site_config_html", JSON.stringify(siteConfig));
+      saveCloudData();
       renderBilingual();
       renderAbout();
       renderContact();
@@ -2090,20 +2167,20 @@
         image: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=500&q=80"
       };
       blogs.unshift(newItem);
-      localStorage.setItem("sr_blogs_html", JSON.stringify(blogs));
+      saveCloudData();
       renderAdminBlogs();
       renderBlogs();
     }
 
     function updateBlogField(id, field, value) {
       blogs = blogs.map(b => b.id === id ? { ...b, [field]: value } : b);
-      localStorage.setItem("sr_blogs_html", JSON.stringify(blogs));
+      saveCloudData();
       renderBlogs();
     }
 
     function deleteBlogItem(id) {
       blogs = blogs.filter(b => b.id !== id);
-      localStorage.setItem("sr_blogs_html", JSON.stringify(blogs));
+      saveCloudData();
       renderAdminBlogs();
       renderBlogs();
     }
@@ -2140,20 +2217,20 @@
         image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=500&q=80"
       };
       portfolio.unshift(newItem);
-      localStorage.setItem("sr_portfolio_html", JSON.stringify(portfolio));
+      saveCloudData();
       renderAdminPortfolio();
       renderPortfolio();
     }
 
     function updatePortfolioField(id, field, value) {
       portfolio = portfolio.map(p => p.id === id ? { ...p, [field]: value } : p);
-      localStorage.setItem("sr_portfolio_html", JSON.stringify(portfolio));
+      saveCloudData();
       renderPortfolio();
     }
 
     function deletePortfolioItem(id) {
       portfolio = portfolio.filter(p => p.id !== id);
-      localStorage.setItem("sr_portfolio_html", JSON.stringify(portfolio));
+      saveCloudData();
       renderAdminPortfolio();
       renderPortfolio();
     }
@@ -2190,20 +2267,20 @@
         image: "https://images.unsplash.com/photo-1507925921958-8a62f3d1a50d?auto=format&fit=crop&w=500&q=80"
       };
       storeItems.unshift(newItem);
-      localStorage.setItem("sr_store_html", JSON.stringify(storeItems));
+      saveCloudData();
       renderAdminStore();
       renderStore();
     }
 
     function updateStoreField(id, field, value) {
       storeItems = storeItems.map(s => s.id === id ? { ...s, [field]: value } : s);
-      localStorage.setItem("sr_store_html", JSON.stringify(storeItems));
+      saveCloudData();
       renderStore();
     }
 
     function deleteStoreItem(id) {
       storeItems = storeItems.filter(s => s.id !== id);
-      localStorage.setItem("sr_store_html", JSON.stringify(storeItems));
+      saveCloudData();
       renderAdminStore();
       renderStore();
     }
@@ -2235,7 +2312,7 @@
     }
 
     function saveVideosAll() {
-      localStorage.setItem("sr_videos_html", JSON.stringify(videos));
+      saveCloudData();
       renderAdminVideos();
       renderVideos();
       showToast(currentLang === "bn" ? "সকল ভিডিও সংরক্ষণ করা হয়েছে! ✅" : "All videos saved successfully! ✅");
@@ -2243,20 +2320,29 @@
 
     function updateVideoField(id, field, value) {
       videos = videos.map(v => v.id === id ? { ...v, [field]: value } : v);
-      localStorage.setItem("sr_videos_html", JSON.stringify(videos));
+      saveCloudData();
       renderVideos();
     }
 
     function deleteVideoItem(id) {
       videos = videos.filter(v => v.id !== id);
-      localStorage.setItem("sr_videos_html", JSON.stringify(videos));
+      saveCloudData();
       renderAdminVideos();
       renderVideos();
     }
 
     // ADMIN: Message Inbox manager
-    function renderAdminInbox() {
+    async function renderAdminInbox() {
       const container = document.getElementById("adm-inbox-container");
+      container.innerHTML = `<div class="py-12 text-center text-stone-400 text-xs font-sans">Loading...</div>`;
+      try{
+        const snap = await db.collection("messages").orderBy("date","desc").get();
+        messages = snap.docs.map(d => d.data());
+      }catch(e){
+        console.error(e);
+        container.innerHTML = `<div class="py-12 text-center text-stone-400 text-xs font-sans">Failed to load messages — check login.</div>`;
+        return;
+      }
       if (messages.length === 0) {
         container.innerHTML = `<div class="py-12 text-center text-stone-400 text-xs font-sans">No messages inside workspace box yet.</div>`;
         return;
@@ -2284,35 +2370,41 @@
       lucide.createIcons();
     }
 
-    function toggleMsgRead(id) {
-      messages = messages.map(m => m.id === id ? { ...m, read: !m.read } : m);
-      localStorage.setItem("sr_messages_html", JSON.stringify(messages));
-      renderAdminInbox();
+    async function toggleMsgRead(id) {
+      const m = messages.find(x => x.id === id);
+      if(!m) return;
+      try{
+        await db.collection("messages").doc(id).update({ read: !m.read });
+        renderAdminInbox();
+      }catch(e){ showToast("সমস্যা হয়েছে"); }
     }
 
-    function deleteInboxMessage(id) {
-      messages = messages.filter(m => m.id !== id);
-      localStorage.setItem("sr_messages_html", JSON.stringify(messages));
-      renderAdminInbox();
+    async function deleteInboxMessage(id) {
+      try{
+        await db.collection("messages").doc(id).delete();
+        renderAdminInbox();
+      }catch(e){ showToast("সমস্যা হয়েছে"); }
     }
 
     // 14. DATA RESET SEEDS FUNCTIONALITIES
-    function resetData() {
+    async function resetData() {
       if (!confirm(currentLang === "bn" ? "আপনি কি ডিফল্ট তথ্য পুনরুদ্ধার করতে চান?" : "Are you sure you want to reset site configs?")) return;
-      
-      localStorage.removeItem("sr_site_config_html");
-      localStorage.removeItem("sr_blogs_html");
-      localStorage.removeItem("sr_portfolio_html");
-      localStorage.removeItem("sr_store_html");
-      localStorage.removeItem("sr_videos_html");
-      localStorage.removeItem("sr_messages_html");
 
       siteConfig = { ...DEFAULT_CONFIG };
       blogs = [...INITIAL_BLOGS];
       portfolio = [...INITIAL_PORTFOLIO];
       storeItems = [...INITIAL_STORE];
       videos = [...INITIAL_VIDEOS];
+      faqs = [...INITIAL_FAQS];
       messages = [];
+
+      await saveCloudData();
+      try{
+        const snap = await db.collection("messages").get();
+        const batch = db.batch();
+        snap.docs.forEach(d => batch.delete(d.ref));
+        await batch.commit();
+      }catch(e){ console.error(e); }
 
       renderBilingual();
       renderBlogs();
@@ -2322,7 +2414,7 @@
       renderAbout();
       renderContact();
 
-      showToast(currentLang === "bn" ? "সকল ডেমো ডাটা পুনরুদ্ধার করা হয়েছে! 🧹" : "Demo seeds reset successfully! 🧹");
+      showToast(currentLang === "bn" ? "সকল ডেমো ডাটা পুনরুদ্ধার করা হয়েছে! 🧹" : "Demo seeds reset successfully! 🧹");
       navigateTo("home");
       toggleCornerMenu();
     }
