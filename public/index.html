@@ -1,6 +1,7 @@
 
 
 
+
 <!DOCTYPE html>
 <html lang="bn" class="dark">
 <head>
@@ -788,7 +789,7 @@
         <i data-lucide="x" class="w-4 h-4"></i>
       </button>
       <div id="detail-modal-image-wrap" class="w-full h-56 md:h-72 overflow-hidden">
-        <img id="detail-modal-image" src="" alt="" class="w-full h-full object-cover" />
+        <img id="detail-modal-image" src="" alt="" class="w-full h-full object-cover" onerror="this.style.display='none'" onload="this.style.display=''" />
       </div>
       <div class="p-6 md:p-8 space-y-4">
         <span id="detail-modal-tag" class="text-[10px] uppercase tracking-wider font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/15 px-2.5 py-0.5 rounded-full w-fit inline-block"></span>
@@ -804,6 +805,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
 <!-- ================= SCRIPTS & SEEDS LAYER ================= -->
   <script>
@@ -821,6 +823,51 @@
     const auth = firebase.auth();
     const db = firebase.firestore();
     const SITE_DOC = db.collection("site").doc("main");
+
+    // ══ EmailJS (ইনবক্স রিপ্লাই ইমেইল পাঠানোর জন্য) ══
+    // এখানে নিজের EmailJS অ্যাকাউন্টের Public Key / Service ID / Template ID বসান।
+    const EMAILJS_PUBLIC_KEY  = "YRd2HFJG-hS7iwpP_";
+    const EMAILJS_SERVICE_ID  = "service_vlqf63q";
+    const EMAILJS_TEMPLATE_ID = "template_0z9day4";
+    const EMAILJS_READY = !EMAILJS_PUBLIC_KEY.startsWith("YOUR_") && !EMAILJS_SERVICE_ID.startsWith("YOUR_") && !EMAILJS_TEMPLATE_ID.startsWith("YOUR_");
+    if (window.emailjs && EMAILJS_READY) {
+      emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+    }
+
+    // ══ Google Drive লিংক রিজলভার — Blog/Portfolio/Store/Video সব জায়গায় এক নিয়মে কাজ করবে ══
+    // যেকোনো ফরম্যাটের গুগল ড্রাইভ শেয়ার লিংক থেকে FILE_ID বের করে
+    function extractDriveFileId(url) {
+      if (!url) return null;
+      const s = String(url);
+      const patterns = [
+        /\/file\/d\/([a-zA-Z0-9_-]{15,})/,
+        /[?&]id=([a-zA-Z0-9_-]{15,})/,
+        /\/d\/([a-zA-Z0-9_-]{15,})/
+      ];
+      for (const re of patterns) {
+        const m = s.match(re);
+        if (m && m[1]) return m[1];
+      }
+      return null;
+    }
+    // ছবির জন্য: Drive লিংক হলে সরাসরি-দেখানো-যায় এমন লিংকে রূপান্তর করে, নাহলে যেমন আছে তেমনই রাখে
+    function resolveImageLink(url) {
+      if (!url) return url;
+      const fileId = extractDriveFileId(url);
+      if (fileId) return `https://lh3.googleusercontent.com/d/${fileId}=w1200`;
+      return url;
+    }
+    // ভিডিওর জন্য: Drive লিংক হলে embeddable preview iframe লিংক রিটার্ন করে, নাহলে null
+    function resolveDriveVideoEmbed(url) {
+      const fileId = extractDriveFileId(url);
+      if (fileId) return `https://drive.google.com/file/d/${fileId}/preview`;
+      return null;
+    }
+    // যেকোনো কার্ড/মোডালে ছবি লোড ব্যর্থ হলে গ্র্যাডিয়েন্ট-অক্ষর ফলব্যাক দেখায়, লেআউট ভাঙে না
+    function handleCardImgError(imgEl, label) {
+      const initials = (label || "IT").replace(/\s+/g, "").slice(0, 2).toUpperCase();
+      imgEl.outerHTML = `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-600 to-teal-700 text-white font-black text-lg">${initials}</div>`;
+    }
 
     // 1. DEFAULT DATA CONFIGURATION
     const DEFAULT_CONFIG = {
@@ -1374,7 +1421,7 @@
 
     // GENERIC DETAIL MODAL (Blog / Portfolio / Store)
     function openDetailModal(opts) {
-      document.getElementById("detail-modal-image").src = opts.image || "";
+      document.getElementById("detail-modal-image").src = resolveImageLink(opts.image) || "";
       document.getElementById("detail-modal-tag").textContent = opts.tag || "";
       document.getElementById("detail-modal-title").textContent = opts.title || "";
       document.getElementById("detail-modal-meta").textContent = opts.meta || "";
@@ -1478,7 +1525,7 @@
       grid.innerHTML = filtered.map(b => `
         <div class="group backdrop-blur-md bg-stone-950/40 hover:bg-stone-900/50 border border-emerald-500/15 hover:border-emerald-500/35 rounded-2xl overflow-hidden transition-all duration-300 shadow-md cursor-pointer" onclick="openBlogDetail('${b.id}')">
           <div class="w-full h-44 overflow-hidden relative border-b border-emerald-500/10">
-            <img src="${b.image}" alt="${b.title}" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
+            <img src="${resolveImageLink(b.image)}" alt="${b.title}" onerror="handleCardImgError(this, '${(b.title||'').replace(/'/g,"")}')" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-stone-950/60 to-transparent"></div>
           </div>
           <div class="p-5 flex flex-col gap-3">
@@ -1543,7 +1590,7 @@
       grid.innerHTML = filtered.map(p => `
         <div class="group backdrop-blur-md bg-stone-950/40 hover:bg-stone-900/50 border border-emerald-500/15 hover:border-emerald-500/35 rounded-2xl overflow-hidden transition-all duration-300 shadow-md cursor-pointer" onclick="openPortfolioDetail('${p.id}')">
           <div class="w-full h-40 overflow-hidden relative border-b border-emerald-500/10">
-            <img src="${p.image}" alt="${p.title}" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
+            <img src="${resolveImageLink(p.image)}" alt="${p.title}" onerror="handleCardImgError(this, '${(p.title||'').replace(/'/g,"")}')" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-stone-950/50 to-transparent"></div>
           </div>
           <div class="p-5 flex flex-col gap-2">
@@ -1605,7 +1652,7 @@
       grid.innerHTML = filtered.map(s => `
         <div class="group backdrop-blur-md bg-stone-950/40 hover:bg-stone-900/50 border border-emerald-500/15 hover:border-emerald-500/35 rounded-2xl overflow-hidden transition-all duration-300 shadow-md cursor-pointer" onclick="openStoreDetail('${s.id}')">
           <div class="w-full h-40 overflow-hidden relative border-b border-emerald-500/10">
-            <img src="${s.image}" alt="${s.name}" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
+            <img src="${resolveImageLink(s.image)}" alt="${s.name}" onerror="handleCardImgError(this, '${(s.name||'').replace(/'/g,"")}')" class="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-500" />
             <div class="absolute inset-0 bg-gradient-to-t from-stone-950/50 to-transparent"></div>
             <span class="absolute bottom-3 right-3 text-emerald-300 bg-stone-950/85 border border-emerald-500/20 px-3 py-1 rounded-full text-xs font-mono font-bold">${s.price}</span>
           </div>
@@ -1674,8 +1721,10 @@
       }
 
       grid.innerHTML = videos.map(v => {
-        const embedUrl = getYoutubeEmbed(v.url);
-        const directVid = isDirectVideo(v.url);
+        const ytEmbed = getYoutubeEmbed(v.url);
+        const driveEmbed = !ytEmbed ? resolveDriveVideoEmbed(v.url) : null;
+        const embedUrl = ytEmbed || driveEmbed;
+        const directVid = !embedUrl && isDirectVideo(v.url);
         
         return `
           <div class="group backdrop-blur-md bg-stone-950/40 border border-emerald-500/15 hover:border-emerald-500/35 rounded-2xl overflow-hidden transition-all duration-300 shadow-md flex flex-col">
@@ -2147,7 +2196,7 @@
           <input type="text" onchange="updateBlogField('${b.id}', 'subSummary', this.value)" value="${b.subSummary}" placeholder="Short Summary" class="w-full bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200" />
           <textarea onchange="updateBlogField('${b.id}', 'desc', this.value)" rows="3" placeholder="Full body HTML Description" class="w-full bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200 font-mono">${b.desc}</textarea>
           <div class="flex justify-between items-center">
-            <input type="text" onchange="updateBlogField('${b.id}', 'image', this.value)" value="${b.image}" placeholder="Thumbnail image URL" class="w-2/3 bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200" />
+            <input type="text" onchange="updateBlogField('${b.id}', 'image', this.value)" value="${b.image}" placeholder="Image URL অথবা Google Drive শেয়ার লিংক" class="w-2/3 bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200" />
             <button onclick="saveBlogItem('${b.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/20 cursor-pointer text-[10px] font-bold flex items-center gap-1 mr-2"><i data-lucide="save" class="w-3.5 h-3.5"></i>সংরক্ষণ</button>
             <button onclick="deleteBlogItem('${b.id}')" class="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
           </div>
@@ -2197,7 +2246,7 @@
           <input type="text" onchange="updatePortfolioField('${p.id}', 'link', this.value)" value="${p.link}" placeholder="Live Visit Link" class="w-full bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200" />
           <input type="text" onchange="updatePortfolioField('${p.id}', 'subSummary', this.value)" value="${p.subSummary}" placeholder="Short Description" class="w-full bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200" />
           <div class="flex justify-between items-center">
-            <input type="text" onchange="updatePortfolioField('${p.id}', 'image', this.value)" value="${p.image}" placeholder="Project cover Image URL" class="w-2/3 bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200" />
+            <input type="text" onchange="updatePortfolioField('${p.id}', 'image', this.value)" value="${p.image}" placeholder="Image URL অথবা Google Drive শেয়ার লিংক" class="w-2/3 bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200" />
             <button onclick="savePortfolioItem('${p.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/20 cursor-pointer text-[10px] font-bold flex items-center gap-1 mr-2"><i data-lucide="save" class="w-3.5 h-3.5"></i>সংরক্ষণ</button>
             <button onclick="deletePortfolioItem('${p.id}')" class="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
           </div>
@@ -2247,7 +2296,7 @@
           </div>
           <input type="text" onchange="updateStoreField('${item.id}', 'subSummary', this.value)" value="${item.subSummary}" placeholder="Short Specifications Summary" class="w-full bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200" />
           <div class="flex justify-between items-center">
-            <input type="text" onchange="updateStoreField('${item.id}', 'image', this.value)" value="${item.image}" placeholder="Product cover Image URL" class="w-2/3 bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200" />
+            <input type="text" onchange="updateStoreField('${item.id}', 'image', this.value)" value="${item.image}" placeholder="Image URL অথবা Google Drive শেয়ার লিংক" class="w-2/3 bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200" />
             <button onclick="saveStoreItem('${item.id}')" class="px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/20 cursor-pointer text-[10px] font-bold flex items-center gap-1 mr-2"><i data-lucide="save" class="w-3.5 h-3.5"></i>সংরক্ষণ</button>
             <button onclick="deleteStoreItem('${item.id}')" class="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
           </div>
@@ -2292,7 +2341,7 @@
         <div class="p-4 rounded-2xl bg-stone-900/50 border border-emerald-500/10 space-y-3 flex items-center justify-between gap-4">
           <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
             <input type="text" onchange="updateVideoField('${v.id}', 'title', this.value)" value="${v.title}" placeholder="Video Title" class="bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200" />
-            <input type="text" onchange="updateVideoField('${v.id}', 'url', this.value)" value="${v.url}" placeholder="YouTube URL Link" class="bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200 font-mono" />
+            <input type="text" onchange="updateVideoField('${v.id}', 'url', this.value)" value="${v.url}" placeholder="YouTube / Google Drive / .mp4 লিংক" class="bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-1.5 text-xs text-stone-200 font-mono" />
           </div>
           <button onclick="deleteVideoItem('${v.id}')" class="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 cursor-pointer"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
         </div>
@@ -2355,6 +2404,7 @@
               <div class="flex items-center gap-2">
                 <span class="text-xs font-bold text-stone-200">${m.name}</span>
                 ${!m.read ? `<span class="bg-emerald-500 text-stone-950 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase">New</span>` : ""}
+                ${m.adminReply ? `<span class="bg-sky-500/20 text-sky-300 text-[9px] font-mono font-bold px-1.5 py-0.5 rounded uppercase border border-sky-500/30">Replied</span>` : ""}
               </div>
               <p class="text-[9px] text-stone-400 font-mono mt-0.5">Email: ${m.email} | Phone: ${m.phone || 'N/A'} | Date: ${m.date}</p>
             </div>
@@ -2364,10 +2414,63 @@
             </div>
           </div>
           <p class="text-xs text-stone-300 bg-stone-950/40 p-3 rounded-xl border border-emerald-500/5 leading-relaxed font-sans whitespace-pre-wrap">${m.message}</p>
-          ${m.image ? `<img src="${m.image}" alt="Attachment" class="max-w-xs max-h-36 object-contain rounded-lg border border-emerald-500/10" />` : ""}
+          ${m.image ? `<img src="${resolveImageLink(m.image)}" alt="Attachment" class="max-w-xs max-h-36 object-contain rounded-lg border border-emerald-500/10" onerror="this.style.display='none'" />` : ""}
+
+          ${m.adminReply ? `
+            <div class="p-3 rounded-xl bg-sky-500/10 border border-sky-500/20">
+              <p class="text-[9px] text-sky-300 font-mono font-bold mb-1 uppercase tracking-wide">আপনার আগের রিপ্লাই:</p>
+              <p class="text-xs text-stone-300 leading-relaxed whitespace-pre-wrap">${m.adminReply}</p>
+            </div>
+          ` : ""}
+
+          <div class="pt-2 border-t border-emerald-500/10 space-y-2">
+            <textarea id="reply-box-${m.id}" rows="2" placeholder="এখানে আপনার রিপ্লাই লিখুন..." class="w-full bg-stone-950 border border-emerald-500/10 rounded-lg px-3 py-2 text-xs text-stone-200 font-sans"></textarea>
+            <div class="flex items-center justify-between gap-2">
+              <button id="reply-btn-${m.id}" onclick="sendInboxReply('${m.id}')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/20 cursor-pointer text-[10px] font-bold"><i data-lucide="send" class="w-3.5 h-3.5"></i>রিপ্লাই পাঠান</button>
+              ${!EMAILJS_READY ? `<span class="text-[9px] text-amber-400/80">⚠️ EmailJS কনফিগার নেই — রিপ্লাই সেভ হবে, ইমেইল যাবে না</span>` : ""}
+            </div>
+          </div>
         </div>
       `).join("");
       lucide.createIcons();
+    }
+
+    async function sendInboxReply(id) {
+      const m = messages.find(x => x.id === id);
+      const box = document.getElementById(`reply-box-${id}`);
+      const btn = document.getElementById(`reply-btn-${id}`);
+      const replyText = box ? box.value.trim() : "";
+      if (!m) return;
+      if (!replyText) { showToast("প্রথমে উত্তরটি লিখুন!"); return; }
+      if (!m.email) { showToast("এই বার্তায় কোনো ইমেইল নেই!"); return; }
+
+      btn.disabled = true;
+      btn.textContent = "পাঠানো হচ্ছে...";
+
+      try {
+        if (EMAILJS_READY && window.emailjs) {
+          await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+            to_email: m.email,
+            to_name: m.name || "",
+            from_name: siteConfig && siteConfig.brandName ? siteConfig.brandName : "SR Tech Lab",
+            original_message: m.message || "",
+            reply_message: replyText
+          });
+        }
+        await db.collection("messages").doc(id).update({
+          adminReply: replyText,
+          repliedAt: new Date().toISOString(),
+          read: true
+        });
+        showToast(EMAILJS_READY ? "রিপ্লাই ইমেইলসহ পাঠানো হয়েছে! ✅" : "রিপ্লাই সংরক্ষণ হয়েছে (ইমেইল কনফিগার নেই) ✅");
+        renderAdminInbox();
+      } catch (err) {
+        console.error(err);
+        showToast("রিপ্লাই পাঠাতে সমস্যা হয়েছে!");
+        btn.disabled = false;
+        btn.innerHTML = `<i data-lucide="send" class="w-3.5 h-3.5"></i>রিপ্লাই পাঠান`;
+        lucide.createIcons();
+      }
     }
 
     async function toggleMsgRead(id) {
